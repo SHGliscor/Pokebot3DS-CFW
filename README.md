@@ -1,4 +1,4 @@
-# POKEBOT3DS-CFW — Windows EXE Release
+# POKEBOT3DS-CFW — Windows only unfortunately 
 
 <p align="center">
   <img src="./POKEBOT3DS-CFW-icon.png" width="220" alt="POKEBOT3DS-CFW">
