@@ -3,30 +3,96 @@
 <p align="center">
   <img src="./POKEBOT3DS-CFW-icon.png" width="220" alt="POKEBOT3DS-CFW">
 </p>
+
 <p align="center">
   <strong>Standalone Windows build for Pokémon Alpha Sapphire</strong>
 </p>
-inspiration taken from
 
- https://github.com/wyanido/pokebot-nds/
- 
- https://github.com/40cakes/pokebot-gen3
- 
- https://github.com/PokemonAutomation
+<p align="center">
+  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/releases/latest"><img src="https://img.shields.io/badge/DOWNLOAD%20LATEST%20EXE-16a34a?style=for-the-badge&logo=windows11&logoColor=white" alt="Download latest EXE"></a>
+  <a href="#first-time-3ds-setup"><img src="https://img.shields.io/badge/SETUP%20GUIDE-2563eb?style=for-the-badge&logo=readthedocs&logoColor=white" alt="Setup guide"></a>
+  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/issues/new?template=bug_report.yml"><img src="https://img.shields.io/badge/REPORT%20BUG-dc2626?style=for-the-badge&logo=github&logoColor=white" alt="Report a bug"></a>
+  <a href="#project-progress"><img src="https://img.shields.io/badge/PROJECT%20PROGRESS-7c3aed?style=for-the-badge&logo=githubactions&logoColor=white" alt="Project progress"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/issues/new?template=feature_request.yml"><img src="https://img.shields.io/badge/REQUEST%20A%20FEATURE-f59e0b?style=flat-square&logo=github&logoColor=white" alt="Request a feature"></a>
+  <a href="#building-the-windows-exe"><img src="https://img.shields.io/badge/BUILD%20EXE-0f766e?style=flat-square&logo=python&logoColor=white" alt="Build EXE"></a>
+  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/issues"><img src="https://img.shields.io/github/issues/SHGliscor/Pokebot3DS-CFW?style=flat-square" alt="Open issues"></a>
+  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/stargazers"><img src="https://img.shields.io/github/stars/SHGliscor/Pokebot3DS-CFW?style=flat-square" alt="GitHub stars"></a>
+  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/network/members"><img src="https://img.shields.io/github/forks/SHGliscor/Pokebot3DS-CFW?style=flat-square" alt="GitHub forks"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Game-Alpha%20Sapphire-2563eb?style=flat-square" alt="Alpha Sapphire only">
+  <img src="https://img.shields.io/badge/Language-English%20Verified-16a34a?style=flat-square" alt="English verified">
+  <img src="https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows11&logoColor=white&style=flat-square" alt="Windows">
+  <img src="https://img.shields.io/badge/CFW-Nexus3DS-7c3aed?style=flat-square" alt="Nexus3DS CFW">
+  <img src="https://img.shields.io/badge/RAM%20Authority-PK6-0891b2?style=flat-square" alt="RAM authority">
+  <img src="https://img.shields.io/badge/Torchic%20code.ips-34%2F34%20PASS-16a34a?style=flat-square" alt="34/34 Torchic code.ips validation">
+</p>
+
+### Inspiration
+
+POKEBOT3DS-CFW takes inspiration from excellent automation projects including:
+
+- [pokebot-nds](https://github.com/wyanido/pokebot-nds/)
+- [pokebot-gen3](https://github.com/40cakes/pokebot-gen3)
+- [PokemonAutomation](https://github.com/PokemonAutomation)
 
 > [!IMPORTANT]
-> **This release is currently for Pokémon Alpha Sapphire only.**
+> **POKEBOT3DS-CFW currently supports Pokémon Alpha Sapphire only.**
 >
-> **English is the only in-game language currently hardware verified.**
-> Other languages are not yet claimed as supported.
+> **English is the only in-game language currently hardware verified.** Other languages remain **UNVERIFIED** until separately tested.
+
+---
+
+## Project progress
+
+### Current Alpha Sapphire starter release — **90%**
+
+```text
+██████████████████░░  90%
+```
+
+The Alpha Sapphire starter-hunting core is hardware validated. Remaining work in this release scope is mainly standalone EXE validation, release packaging, UI completion and broader stop-point testing.
+
+### Wider POKEBOT3DS-CFW roadmap — **38%**
+
+```text
+████████░░░░░░░░░░░░  38%
+```
+
+The wider roadmap includes Omega Ruby parity, RAM-based wild hunts, static encounters, additional games and language validation.
+
+> Percentages are roadmap estimates, not automated code-coverage metrics.
+
+| Area | Progress | Status |
+|---|---:|---|
+| Nexus3DS read-only RAM bridge | **100%** | ✅ Hardware proven |
+| Alpha Sapphire RAM mapping | **100%** | ✅ Proven |
+| Torchic starter backend | **100%** | ✅ Proven |
+| Treecko starter backend | **100%** | ✅ Proven |
+| Mudkip starter backend | **100%** | ✅ Proven |
+| `code.ips` ON reset route | **100%** | ✅ 34/34 Torchic validation |
+| PK6 validation + shiny authority | **100%** | ✅ RAM authoritative |
+| Qt dashboard core | **80%** | 🟢 Dashboard / Hunts / Settings live |
+| Stats / encounter history | **80%** | 🟢 Core persistence live |
+| Immediate Stop behaviour | **75%** | 🟡 Implemented; broader hardware validation pending |
+| GitHub/setup documentation | **90%** | 🟢 Main setup flow documented |
+| Alpha Sapphire language validation | **14%** | 🟡 English verified; others unverified |
+| Omega Ruby RAM parity | **0%** | ⚪ Not started |
+| RAM-based wild hunting | **10%** | ⚪ Architecture planned / early authority known |
+| RAM-based static hunting | **0%** | ⚪ Deferred |
+| XY / Gen 7 support | **0%** | ⚪ Future roadmap |
 
 ---
 
 ## Do I need Python?
 
-**No.**
+**No — not for the finished Windows EXE release.**
 
-If you downloaded the finished **POKEBOT3DS-CFW Windows EXE release**, you do **not** need to install:
+End users do **not** need to install:
 
 - Python
 - pip
@@ -34,17 +100,10 @@ If you downloaded the finished **POKEBOT3DS-CFW Windows EXE release**, you do **
 - Qt
 - PyInstaller
 - `RUN_REQUIREMENTS.bat`
-- any Python package from `requirements.txt`
 
-The release is built with **PyInstaller in `onedir` mode**. The Python interpreter,
-PySide6/Qt libraries, and the Python modules used by POKEBOT3DS-CFW are bundled
-inside the application folder.
+The finished application uses a PyInstaller **onedir** bundle. Python, PySide6/Qt and the required Python modules are included inside the application folder.
 
-### Important: keep the whole folder
-
-POKEBOT3DS-CFW is intentionally distributed as a folder-based application.
-
-A typical release looks like:
+### Keep the whole application folder
 
 ```text
 POKEBOT3DS-CFW/
@@ -61,31 +120,7 @@ POKEBOT3DS-CFW/
 └─ README.md
 ```
 
-**Do not move `POKEBOT3DS-CFW.exe` out of this folder and do not delete
-`_internal`.**
-
-The EXE depends on the bundled files beside it.
-
----
-
-## What you still need
-
-The standalone EXE removes the need for Python and PC-side dependency setup.
-
-You still need:
-
-- a compatible Nintendo 3DS with the required custom firmware setup
-- the supplied **custom Nexus3DS-based `boot.firm`**
-- the supplied Pokémon Alpha Sapphire `code.ips`
-- game patching enabled
-- InputRedirection enabled
-- the PC and 3DS on the same local network
-- Pokémon Alpha Sapphire
-- the correct 3DS IP address entered in POKEBOT3DS-CFW
-
-The EXE does **not** automatically install `boot.firm` or `code.ips`.
-
-Those remain manual SD-card setup files.
+Do not remove `_internal` or move only the EXE elsewhere.
 
 ---
 
@@ -93,19 +128,14 @@ Those remain manual SD-card setup files.
 
 POKEBOT3DS-CFW does **not** use a stock Luma3DS `boot.firm`.
 
-The supplied firmware is based on **Nexus3DS CFW**, with custom POKEBOT3DS-CFW
-modifications that add a **read-only RAM bridge** for the game.
-
-### Network services
+The supplied firmware is based on **Nexus3DS CFW**, with custom POKEBOT3DS-CFW modifications that add a **read-only RAM bridge** for the game.
 
 | Function | Port |
 |---|---:|
-| POKEBOT3DS-CFW read-only RAM bridge | UDP **4952** |
+| Read-only RAM bridge | UDP **4952** |
 | Nexus3DS/Luma-derived InputRedirection | UDP **4950** |
 
-RAM is used as the authority for Pokémon encounter and shiny decisions.
-
-The bot does not use OCR or image recognition as shiny authority.
+RAM is the authority for Pokémon encounter and shiny decisions. OCR/image shiny detection is not used.
 
 ---
 
@@ -113,18 +143,17 @@ The bot does not use OCR or image recognition as shiny authority.
 
 ### 1. Back up your SD card
 
-Before replacing firmware or adding patches, make a backup of important SD-card
-files and save data.
+Back up important SD-card files and save data before replacing firmware or adding patches.
 
 ### 2. Install the supplied `boot.firm`
 
-The release contains:
+Copy:
 
 ```text
 3ds_sd\boot.firm
 ```
 
-Copy it to the root of the 3DS SD card:
+to:
 
 ```text
 SD:\boot.firm
@@ -132,7 +161,7 @@ SD:\boot.firm
 
 Back up the previous `boot.firm` first.
 
-### 3. Install the Alpha Sapphire patch
+### 3. Install the Alpha Sapphire `code.ips`
 
 Copy:
 
@@ -152,16 +181,14 @@ The current patch is for **Pokémon Alpha Sapphire only**.
 
 1. Fully power off the 3DS.
 2. Hold **SELECT**.
-3. While still holding SELECT, power on the 3DS.
-4. In the Nexus3DS/Luma-derived configuration menu, enable **game patching**.
+3. While holding SELECT, power on the 3DS.
+4. Enable **game patching** in the Nexus3DS/Luma-derived configuration menu.
 5. Save and exit.
 
 ### 5. Start InputRedirection
 
-After booting the 3DS:
-
 1. Start Pokémon Alpha Sapphire.
-2. Open Rosalina using **L + D-Pad Down + Select**.
+2. Open Rosalina with **L + D-Pad Down + Select**.
 3. Open **Miscellaneous options**.
 4. Start **InputRedirection**.
 5. Exit Rosalina and return to the game.
@@ -170,21 +197,13 @@ After booting the 3DS:
 
 ## Starting POKEBOT3DS-CFW
 
-There is no dependency installer to run for the finished EXE release.
-
-Simply double-click:
+For the finished EXE release, simply launch:
 
 ```text
 POKEBOT3DS-CFW.exe
 ```
 
-The application uses the standard native Windows frame with:
-
-- minimise
-- maximise / restore
-- close
-- normal title-bar dragging
-- normal window resizing
+The application permanently uses the **standard native Windows frame** with native minimise, maximise/restore, close, title-bar dragging and edge/corner resizing.
 
 ---
 
@@ -192,17 +211,12 @@ The application uses the standard native Windows frame with:
 
 In **Settings**, confirm:
 
-- your 3DS IP address
+- 3DS IP address
 - RAM bridge port: `4952`
 - InputRedirection port: `4950`
 - whether `code.ips` is ON or OFF
 
-For the bundled validated Alpha Sapphire setup, select the setting that matches
-the patch actually installed on the SD card.
-
 ### `code.ips` ON
-
-Expected reset route:
 
 ```text
 Reset
@@ -211,14 +225,9 @@ Reset
 → Field / Birch Bag
 ```
 
-Communication-error dismissal is disabled in this mode.
-
-If the environment does not match the expected RAM state, the bot should HOLD
-rather than blindly press through it.
+Communication-error dismissal is disabled in this mode. An unexpected communication-error state causes a safety HOLD rather than blind dismissal inputs.
 
 ### `code.ips` OFF
-
-Expected reset route:
 
 ```text
 Reset
@@ -229,61 +238,44 @@ Reset
 → Field / Birch Bag
 ```
 
-The bot uses bounded, RAM-gated communication-error recovery.
+The bot uses bounded RAM-gated communication-error recovery.
 
 ---
 
-## Supported hunts
+## Current validated starter results
 
-Current production scope:
+| Starter | Species | Validation | Status |
+|---|---:|---:|---|
+| Treecko | #252 | 10/10 baseline | ✅ |
+| Torchic | #255 | 10/10 baseline | ✅ |
+| Mudkip | #258 | 10/10 baseline | ✅ |
 
-- Treecko starter
-- Torchic starter
-- Mudkip starter
+The current `code.ips` ON reset-route policy later completed a **34/34 Torchic hardware validation run** with:
 
-Current game:
-
-- **Pokémon Alpha Sapphire**
-
-Current verified language:
-
-- **English**
-
-Not currently verified:
-
-- Japanese
-- French
-- German
-- Italian
-- Spanish
-- Korean
-- Omega Ruby
-- XY
-- Sun / Moon
-- Ultra Sun / Ultra Moon
+- 34 completed encounters
+- 34 PASS
+- 0 safety HOLDs
+- 0 failures
+- 0 transport retries
+- 35/35 `Field + PSS` Birch-bag authority probes passing
+- mean encounter time around **41.88 seconds**
+- approximately **86 encounters/hour**
 
 ---
 
 ## RAM shiny safety
 
-POKEBOT3DS-CFW uses validated PK6 data from game RAM.
-
-For an authoritative encounter, the bot validates the Pokémon data before making
-the shiny decision.
-
-Core safety policy:
-
 ```text
-valid non-shiny → automation may continue
-shiny           → absolute HOLD
-invalid data    → HOLD
-wrong species   → HOLD
-checksum error  → HOLD
-TID/SID mismatch→ HOLD
-RAM/state error → HOLD
+valid non-shiny  → automation may continue
+shiny            → ABSOLUTE HOLD
+invalid data     → HOLD
+wrong species    → HOLD
+checksum error   → HOLD
+TID/SID mismatch → HOLD
+RAM/state error  → HOLD
 ```
 
-The bot should never intentionally reset over an authoritative shiny result.
+A validated RAM-authoritative shiny must never be intentionally reset over.
 
 ---
 
@@ -299,148 +291,146 @@ When Stop is pressed:
 - the bot does not deliberately finish the cycle
 - the bot does not deliberately return to the Birch bag first
 
-If a bounded UDP RAM request is already waiting for a network reply, the worker
-may need to reach that request's configured timeout before it fully exits, but
-no new gameplay input should be authorized after Stop.
+A bounded RAM request already waiting for a network reply may still need to reach its configured timeout, but no new gameplay input should be authorized after Stop.
 
 ---
 
-## If the bot HOLDs
+## Language support
 
-A safety HOLD is intentional.
-
-Do not repeatedly restart the bot without checking why it stopped.
-
-Use the support/export function and retain the generated support ZIP so the
-failing RAM/state gate can be diagnosed.
-
-A HOLD may indicate:
-
-- unexpected game state
-- RAM bridge timeout
-- checksum failure
-- wrong Pokémon identity
-- TID/SID mismatch
-- reset-route mismatch
-- incorrect `code.ips` setting
-- other safety validation failure
+| Language | Status |
+|---|---|
+| English | ✅ **VERIFIED** |
+| Japanese | ⚪ Unverified |
+| French | ⚪ Unverified |
+| German | ⚪ Unverified |
+| Italian | ⚪ Unverified |
+| Spanish | ⚪ Unverified |
+| Korean | ⚪ Unverified |
 
 ---
 
-## Windows SmartScreen / antivirus
+## Building the Windows EXE
 
-Unsigned self-built applications may trigger a Windows SmartScreen warning or
-antivirus reputation check.
+Developers building from source use:
 
-That is separate from whether Python is installed.
-
-POKEBOT3DS-CFW does not require Python on the end-user PC merely because Windows
-shows an unknown-publisher or reputation warning.
-
-Future releases can add Windows code signing if desired.
-
----
-
-## For developers only
-
-If you are building POKEBOT3DS-CFW from source, then the **build computer**
-does need Python and the build dependencies.
-
-Use:
-
-```text
+```bat
 BUILD_EXE.bat
 ```
 
-The builder creates an isolated build environment, installs the runtime/build
-dependencies, and produces:
+The finished application is created at:
 
 ```text
 dist\POKEBOT3DS-CFW\POKEBOT3DS-CFW.exe
 ```
 
-Normal users should receive the complete finished:
+The public EXE release bundles Python and PySide6. End users do not need `RUN_REQUIREMENTS.bat`.
 
-```text
-dist\POKEBOT3DS-CFW\
-```
-
-folder.
-
-They do not need the source-tree `RUN_REQUIREMENTS.bat`.
+POKEBOT3DS-CFW uses PyInstaller **onedir** mode. Distribute the complete `dist\POKEBOT3DS-CFW` folder, not only the EXE.
 
 ---
 
-## Release validation requirement
+## Roadmap
 
-Before publishing a new EXE build, test the **exact finished release folder** on
-a clean Windows system or virtual machine that does **not have Python installed**.
+### Next
 
-Minimum release smoke test:
+- [ ] Validate immediate Stop at multiple awkward points
+- [ ] Build and clean-machine test the standalone Windows EXE
+- [ ] Publish the first GitHub EXE release
+- [ ] Finish Statistics page
+- [ ] Finish Tools page
+- [ ] Finish Testing / Support page
 
-- [ ] `POKEBOT3DS-CFW.exe` launches with no Python installed
-- [ ] shiny Kyogre icon appears on the EXE
-- [ ] icon appears in the native title bar
-- [ ] icon appears in the taskbar / Alt+Tab
+### Omega Ruby
+
+- [ ] Detect Omega Ruby title/process
+- [ ] Prove Birch-bag anchors
+- [ ] Prove TID/SID
+- [ ] Prove party0
+- [ ] Prove Poke3Select states/slots
+- [ ] Prove battle-state mapping
+- [ ] Torchic 1 → 10
+- [ ] Treecko 1 → 10
+- [ ] Mudkip 1 → 10
+
+### Wild hunts
+
+- [ ] Manual RAM authority observations
+- [ ] Fresh encounter boundary
+- [ ] Shiny absolute HOLD
+- [ ] Automatic Run after validated non-shiny
+- [ ] Movement-only module
+- [ ] Grass containment / map geometry
+- [ ] Finite 1 → 5 → 10 → 30–50 validation
+- [ ] Unlimited mode
+
+### Later
+
+- [ ] XY
+- [ ] Sun / Moon
+- [ ] Ultra Sun / Ultra Moon
+- [ ] RAM-based static encounters
+- [ ] Additional language validation
+
+---
+
+## If the bot HOLDs
+
+A safety HOLD is intentional. Export and retain the support ZIP so the exact failing RAM/state gate can be diagnosed.
+
+---
+
+## Windows SmartScreen / antivirus
+
+Unsigned self-built applications may trigger a Windows SmartScreen or antivirus reputation warning. That is separate from whether Python is installed.
+
+---
+
+## Standalone EXE validation
+
+Before publishing an EXE release, test the **exact finished distribution folder** on a clean Windows system or VM with no Python installed.
+
+- [ ] EXE launches without Python installed
+- [ ] shiny Kyogre icon appears on EXE/title bar/taskbar/Alt+Tab
 - [ ] Dashboard opens
 - [ ] Hunts page opens
 - [ ] Settings page opens
 - [ ] settings persist
-- [ ] RAM bridge connection test works
+- [ ] RAM bridge connection works
 - [ ] InputRedirection works
 - [ ] assets and shiny sound load
 - [ ] support ZIP export works
-- [ ] Alpha Sapphire starter hunt can start
+- [ ] Alpha Sapphire starter hunt starts
 - [ ] STOP works
 - [ ] no missing-module or missing-DLL error occurs
 
-Only after that clean-machine test should the EXE release be described as
-**standalone validated**.
+---
+
+## Compatibility
+
+### Currently supported
+
+- ✅ Pokémon Alpha Sapphire
+- ✅ Title ID `000400000011C500`
+- ✅ English language
+- ✅ Treecko / Torchic / Mudkip starter hunts
+- ✅ Custom Nexus3DS RAM bridge
+- ✅ InputRedirection UDP 4950
+- ✅ RAM bridge UDP 4952
+- ✅ `code.ips` ON reset route
+- ✅ Windows Qt dashboard
+
+### Not yet supported / verified
+
+- ❌ Omega Ruby
+- ❌ XY
+- ❌ Sun / Moon
+- ❌ Ultra Sun / Ultra Moon
+- ❌ non-English language modes
+- ❌ production wild-hunt automation
+- ❌ production static-hunt automation
 
 ---
 
-## Why there is no `RUN_REQUIREMENTS.bat` in the public EXE release
+## Disclaimer
 
-`RUN_REQUIREMENTS.bat` exists for running the Python source version.
-
-It is unnecessary for the finished PyInstaller application because the
-interpreter and required Python modules are bundled with the application.
-
-For GitHub source/development, `requirements.txt` remains useful.
-
-For normal Windows users, the intended experience is:
-
-```text
-Extract release
-→ configure 3DS
-→ double-click POKEBOT3DS-CFW.exe
-```
-
-No Python setup step is required.
-
----
-
-## Current compatibility
-
-| Component | Status |
-|---|---|
-| Windows standalone EXE architecture | ✅ |
-| Python required for end user | ❌ No |
-| PySide6 install required for end user | ❌ No |
-| `RUN_REQUIREMENTS.bat` required for end user | ❌ No |
-| Pokémon Alpha Sapphire | ✅ |
-| English language | ✅ Hardware verified |
-| Other languages | ⚪ Unverified |
-| Omega Ruby | ⚪ Not yet supported |
-| Custom Nexus3DS RAM bridge | ✅ |
-| InputRedirection UDP 4950 | ✅ |
-| RAM bridge UDP 4952 | ✅ |
-
----
-
-## Important
-
-POKEBOT3DS-CFW is an independent homebrew and automation project.
-
-Keep backups of your SD card and important save data before testing custom
-firmware, patches or automation.
+POKEBOT3DS-CFW is an independent homebrew/automation project. Use it only with hardware, game copies and save data you are authorised to modify or automate. Keep backups of your SD card and important save data before testing custom firmware, patches or automation.
