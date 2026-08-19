@@ -1,9 +1,8 @@
 # POKEBOT3DS-CFW — Windows EXE Release
 
 <p align="center">
-  <img src="assets/POKEBOT3DS-CFW-icon.png" width="220" alt="POKEBOT3DS-CFW">
+  <img src="./POKEBOT3DS-CFW-icon.png" width="220" alt="POKEBOT3DS-CFW">
 </p>
-
 <p align="center">
   <strong>Standalone Windows build for Pokémon Alpha Sapphire</strong>
 </p>
