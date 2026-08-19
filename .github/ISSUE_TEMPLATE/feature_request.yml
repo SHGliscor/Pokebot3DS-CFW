@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest an improvement or future POKEBOT3DS-CFW feature
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest a feature, game target, UI improvement, or workflow enhancement for POKEBOT3DS-CFW.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature area
+      options:
+        - Dashboard / UI
+        - Starter hunting
+        - Wild hunting
+        - Static hunting
+        - Omega Ruby support
+        - XY support
+        - Gen 7 support
+        - RAM bridge
+        - Input controller
+        - Stats / history
+        - GitHub / installer / EXE
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: feature
+    attributes:
+      label: Feature description
+      description: What would you like POKEBOT3DS-CFW to do?
+    validations:
+      required: true
+  - type: textarea
+    id: benefit
+    attributes:
+      label: Why would this be useful?
+      description: Explain the workflow or problem this would improve.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Add screenshots, examples, technical details, or related ideas if useful.
