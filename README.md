@@ -7,6 +7,7 @@
   <strong>Standalone Windows build for Pokémon Alpha Sapphire</strong>
 </p>
 inspiration taken from
+
  https://github.com/wyanido/pokebot-nds/
  
  https://github.com/40cakes/pokebot-gen3
