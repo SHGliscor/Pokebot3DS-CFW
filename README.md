@@ -7,9 +7,11 @@
   <strong>Standalone Windows build for Pokémon Alpha Sapphire</strong>
 </p>
 inspiration taken from
-# https://github.com/wyanido/pokebot-nds/
-# https://github.com/40cakes/pokebot-gen3
-# https://github.com/PokemonAutomation
+ https://github.com/wyanido/pokebot-nds/
+ 
+ https://github.com/40cakes/pokebot-gen3
+ 
+ https://github.com/PokemonAutomation
 
 > [!IMPORTANT]
 > **This release is currently for Pokémon Alpha Sapphire only.**
