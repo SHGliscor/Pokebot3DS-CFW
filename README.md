@@ -128,7 +128,7 @@ Do not remove `_internal` or move only the EXE elsewhere.
 
 POKEBOT3DS-CFW does **not** use a stock Luma3DS `boot.firm`.
 
-The supplied firmware is based on **Nexus3DS CFW**, with custom POKEBOT3DS-CFW modifications that add a **read-only RAM bridge** for the game.
+The supplied firmware is based on **[Nexus3DS](https://github.com/2b-zipper/Nexus3DS)**, with custom POKEBOT3DS-CFW modifications that add a **read-only RAM bridge** for the game.
 
 | Function | Port |
 |---|---:|
@@ -159,7 +159,7 @@ to:
 SD:\boot.firm
 ```
 
-Back up the previous `boot.firm` first.
+Back up the previous `boot.firm` first DO NOT DELETE IT RENAME IF NEEDED!.
 
 ### 3. Install the Alpha Sapphire `code.ips`
 
@@ -309,26 +309,6 @@ A bounded RAM request already waiting for a network reply may still need to reac
 
 ---
 
-## Building the Windows EXE
-
-Developers building from source use:
-
-```bat
-BUILD_EXE.bat
-```
-
-The finished application is created at:
-
-```text
-dist\POKEBOT3DS-CFW\POKEBOT3DS-CFW.exe
-```
-
-The public EXE release bundles Python and PySide6. End users do not need `RUN_REQUIREMENTS.bat`.
-
-POKEBOT3DS-CFW uses PyInstaller **onedir** mode. Distribute the complete `dist\POKEBOT3DS-CFW` folder, not only the EXE.
-
----
-
 ## Roadmap
 
 ### Next
@@ -424,6 +404,7 @@ Before publishing an EXE release, test the **exact finished distribution folder*
 - ❌ Omega Ruby
 - ❌ XY
 - ❌ Sun / Moon
+- ❌ gen2 VC G/S/C
 - ❌ Ultra Sun / Ultra Moon
 - ❌ non-English language modes
 - ❌ production wild-hunt automation
@@ -433,4 +414,4 @@ Before publishing an EXE release, test the **exact finished distribution folder*
 
 ## Disclaimer
 
-POKEBOT3DS-CFW is an independent homebrew/automation project. Use it only with hardware, game copies and save data you are authorised to modify or automate. Keep backups of your SD card and important save data before testing custom firmware, patches or automation.
+POKEBOT3DS-CFW is an independent homebrew/automation project. Use it only with you actual 3DS hardware this is NOT made for an EMULATOR, Keep backups of your SD card and important save data before testing custom firmware, patches or automation.
