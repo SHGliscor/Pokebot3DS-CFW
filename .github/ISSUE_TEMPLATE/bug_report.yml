@@ -1,0 +1,89 @@
+name: Bug report
+description: Report a reproducible POKEBOT3DS-CFW problem
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve POKEBOT3DS-CFW. Please include a support ZIP when the bot produced one.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Starter hunt
+        - Reset route / code.ips
+        - RAM bridge
+        - InputRedirection
+        - Dashboard / UI
+        - EXE / startup
+        - Stats / history
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: codeips
+    attributes:
+      label: code.ips mode
+      options:
+        - ON
+        - OFF
+        - Not applicable
+    validations:
+      required: true
+  - type: input
+    id: starter
+    attributes:
+      label: Hunt / starter
+      placeholder: Torchic, Treecko, Mudkip, or N/A
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe what you expected and what actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Launch POKEBOT3DS-CFW
+        2. Select ...
+        3. Press ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: support
+    attributes:
+      label: Support ZIP / logs
+      description: Drag the support ZIP or relevant log here if available.
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+  - type: dropdown
+    id: language
+    attributes:
+      label: Alpha Sapphire language
+      options:
+        - English
+        - Japanese
+        - French
+        - German
+        - Italian
+        - Spanish
+        - Korean
+        - Other / unknown
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I have not manually edited the locked starter modules.
+        - label: I understand that unexpected state/checksum/RAM failures should HOLD rather than blindly reset.
