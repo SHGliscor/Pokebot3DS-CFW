@@ -55,9 +55,7 @@ Because of that, **AI-assisted development ("vibe coding") is part of the develo
 
 Some parts of the project have been heavily assisted by AI, particularly the dashboard/UI and areas where I've needed help debugging, restructuring, or correcting code I've written.
 
-The backend and core bot logic, however, are largely based on my own work, testing, research, experimentation, and implementation. I would estimate that roughly **85% of the backend logic originates from my own work**, with AI helping me debug problems, improve implementations, and develop things faster than I would be able to alone.
-
-The dashboard/UI has been much more heavily AI-assisted.
+The backend and core bot logic, however, are largely based on my own work, testing, research, experimentation, and implementation. I would estimate that roughly **85% of the backend logic originates from my own work**, with AI helping me debug problems, improve implementations, and develop things faster than I would be able to.
 
 I know that some people are strongly against the use of AI in software development, and I understand many of the concerns surrounding it. I agree with quite a few of those concerns myself.
 
@@ -78,7 +76,7 @@ Thank you to everyone who tests the bot, reports bugs, provides feedback, or sim
 
 Pokebot3DS-CFW is a Windows Qt application paired with a customised Nexus3DS-based `boot.firm`. The firmware exposes a small read-only RAM bridge and an acknowledged HID/touch input bridge on UDP `4952`.
 
-The bot treats validated Pokémon RAM as the source of truth. OCR or image matching is **not** used as shiny authority.
+The bot treats validated Pokémon RAM as the source of truth. OCR or image matching is **not** used as shiny authority. I want to make this very clear NOTHING is written to RAM its not an on air memory writer like pkmn-ntr is. this is Purley a shiny hunting bot like my inspirations above so go check them out also!
 
 ---
 
