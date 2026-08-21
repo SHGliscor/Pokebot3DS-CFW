@@ -5,7 +5,11 @@
 </p>
 
 <p align="center">
-  <strong>RAM-authoritative shiny-hunting automation for Pokémon Omega Ruby and Alpha Sapphire on a real Nintendo 3DS</strong>
+  <strong>RAM-authoritative shiny-hunting automation for Pokémon Omega Ruby and Alpha Sapphire on a real Nintendo 3DS
+  
+  transparency i want to be completely honest and 100% real with the people who will use this shiny hunting bot
+  
+  some of the bot is vibe coded and some if the work is done by myelf im 1 person working on this im also a dad to a 1 year old and work fulltime so i only get a few hours a day to work on this project so vibe coding/AI os helping me when i get my code wrong and the dashboard itself is completely vibe but backend is around 85% my own code</strong>
 </p>
 
 <p align="center">
