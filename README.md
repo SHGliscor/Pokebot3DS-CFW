@@ -242,3 +242,100 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 ## Disclaimer
 
 Pokebot3DS-CFW is an independent homebrew/automation project. Use it only with real 3DS hardware. Keep backups of your SD card and important save data before testing custom firmware, patches or automation.
+
+---
+
+## Latest development progress — August 2026
+
+The existing README above is intentionally preserved. This section records newer progress made after several of the earlier validation notes were written.
+
+### Omega Ruby Wild automation is now hardware-proven
+
+Omega Ruby has now completed an automated **5/5 finite Wild Run proof** using the frozen W6 causal wild state machine on real hardware.
+
+- detected game: **Pokémon Omega Ruby 1.4** (`...C400 / sango-1`)
+- exactly **5/5 encounters completed successfully**
+- one authoritative PK6 read per encounter
+- validated checksum/species/TID-SID before continuation
+- non-shiny encounters escaped automatically
+- post-escape field authority and encounter-terrain containment re-confirmed before movement resumed
+- zero touch-timeout recoveries during the proof
+- shiny or invalid authority still causes an **absolute HOLD**
+
+This newer proof advances Omega Ruby beyond the earlier **“Shared backend enabled”** wording in the validation table above. The proven Run behaviour is now treated as a frozen working path rather than something to optimise unnecessarily.
+
+The normal Dashboard Wild hunt is **unlimited** and continues until the user stops it, a shiny is found, or a safety condition causes a HOLD. The separate 5-encounter launcher remains a finite diagnostic/proof tool.
+
+Early real-hardware testing has also successfully triggered and handled Wild encounters in additional grass areas beyond the original Route 101 proof area. Broader map-by-map coverage is still being accumulated rather than assumed complete.
+
+### Random Hoenn starters
+
+A **Random** starter mode has been added for the hardware-proven Hoenn trio.
+
+On every reset the orchestration layer independently chooses one of:
+
+- Treecko
+- Torchic
+- Mudkip
+
+The random chooser only selects which locked starter module runs. It does **not** replace or rewrite the proven Treecko/Torchic/Mudkip selection logic, and the individual per-starter ledgers remain authoritative.
+
+### STATS is now analytics/history focused
+
+The STATS design is separated from hunt selection and configuration. Its role is to show what the bot has achieved over time.
+
+Current analytics coverage includes:
+
+- lifetime encounters and shinies
+- current phase and phase encounters
+- total hunt time and encounters/hour
+- current target, game, location and hunt method
+- shiny-value and IV extrema
+- per-species history
+- method breakdowns
+- location breakdowns
+- Omega Ruby / Alpha Sapphire / combined ORAS totals
+- chronological shiny history
+- records such as fastest shiny and longest phase
+- encounters/hour, cumulative encounter/shiny, species and method graphs
+- odds-cycle progress
+
+Shiny Charm-adjusted odds are only used when Charm status has a proven RAM authority for the active game; unknown authority is not silently guessed.
+
+### TOOLS is for diagnostics and support
+
+TOOLS is being kept separate from normal hunting and settings. The page is organised around:
+
+**3DS Diagnostics | RAM & Game Data | Maintenance | Support**
+
+The Tools design includes a top-level **System Health** view plus utilities for:
+
+- UDP 4952 connection/game detection
+- controller acknowledgement testing
+- safe read-only RAM inspection
+- manual PK6 inspection
+- terrain/position/corridor inspection
+- encounter-table lookup
+- Shiny Charm authority display
+- local game-patch validation
+- CFW/bridge capability information
+- sprite-cache maintenance
+- support ZIP export
+- opening Stats/Logs/Cache/Support/AppData folders
+- bot/build/patch/database information
+- non-destructive self-test diagnostics
+- optional advanced raw/state/protocol diagnostics
+
+Unsupported or not-yet-proven authorities are shown as **UNVERIFIED** rather than fabricated as PASS.
+
+### Current UI responsibility split
+
+```text
+DASHBOARD = run the hunt
+HUNTS     = choose what to hunt
+STATS     = analyse history and results
+TOOLS     = diagnose, test and inspect
+SETTINGS  = configure the bot
+```
+
+The underlying safety model remains unchanged: **RAM is authoritative, no RAM writes are used for shiny decisions, and invalid state means HOLD rather than blind continuation.**
