@@ -1,416 +1,259 @@
-# POKEBOT3DS-CFW — Windows only unfortunately 
+# Pokebot3DS-CFW
 
 <p align="center">
-  <img src="./POKEBOT3DS-CFW-icon.png" width="220" alt="POKEBOT3DS-CFW">
+  <img src="./POKEBOT3DS-CFW-icon.png" width="220" alt="Pokebot3DS-CFW">
 </p>
 
 <p align="center">
-  <strong>Standalone Windows build for Pokémon Alpha Sapphire</strong>
+  <strong>RAM-authoritative shiny-hunting automation for Pokémon Omega Ruby and Alpha Sapphire on a real Nintendo 3DS</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/releases/latest"><img src="https://img.shields.io/badge/DOWNLOAD%20LATEST%20EXE-16a34a?style=for-the-badge&logo=windows11&logoColor=white" alt="Download latest EXE"></a>
-  <a href="#first-time-3ds-setup"><img src="https://img.shields.io/badge/SETUP%20GUIDE-2563eb?style=for-the-badge&logo=readthedocs&logoColor=white" alt="Setup guide"></a>
-  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/issues/new?template=bug_report.yml"><img src="https://img.shields.io/badge/REPORT%20BUG-dc2626?style=for-the-badge&logo=github&logoColor=white" alt="Report a bug"></a>
-  <a href="#project-progress"><img src="https://img.shields.io/badge/PROJECT%20PROGRESS-7c3aed?style=for-the-badge&logo=githubactions&logoColor=white" alt="Project progress"></a>
+  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/releases/latest"><img src="https://img.shields.io/badge/Download-Latest%20Release-16a34a?style=for-the-badge&logo=windows11&logoColor=white" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/Games-Omega%20Ruby%20%2B%20Alpha%20Sapphire-2563eb?style=for-the-badge" alt="Omega Ruby and Alpha Sapphire">
+  <img src="https://img.shields.io/badge/RAM%20%2B%20Input-UDP%204952-0891b2?style=for-the-badge" alt="UDP 4952">
 </p>
-
-<p align="center">
-  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/issues/new?template=feature_request.yml"><img src="https://img.shields.io/badge/REQUEST%20A%20FEATURE-f59e0b?style=flat-square&logo=github&logoColor=white" alt="Request a feature"></a>
-  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/issues"><img src="https://img.shields.io/github/issues/SHGliscor/Pokebot3DS-CFW?style=flat-square" alt="Open issues"></a>
-  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/stargazers"><img src="https://img.shields.io/github/stars/SHGliscor/Pokebot3DS-CFW?style=flat-square" alt="GitHub stars"></a>
-  <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/network/members"><img src="https://img.shields.io/github/forks/SHGliscor/Pokebot3DS-CFW?style=flat-square" alt="GitHub forks"></a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Game-Alpha%20Sapphire-2563eb?style=flat-square" alt="Alpha Sapphire only">
-  <img src="https://img.shields.io/badge/Language-English%20Verified-16a34a?style=flat-square" alt="English verified">
-  <img src="https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows11&logoColor=white&style=flat-square" alt="Windows">
-  <img src="https://img.shields.io/badge/CFW-Nexus3DS-7c3aed?style=flat-square" alt="Nexus3DS CFW">
-  <img src="https://img.shields.io/badge/RAM%20Authority-PK6-0891b2?style=flat-square" alt="RAM authority">
-  <img src="https://img.shields.io/badge/Torchic%20code.ips-34%2F34%20PASS-16a34a?style=flat-square" alt="34/34 Torchic code.ips validation">
-</p>
-
-### Inspiration
-
-POKEBOT3DS-CFW takes inspiration from excellent automation projects including:
-
-- [pokebot-nds](https://github.com/wyanido/pokebot-nds/)
-- [pokebot-gen3](https://github.com/40cakes/pokebot-gen3)
-- [PokemonAutomation](https://github.com/PokemonAutomation)
 
 > [!IMPORTANT]
-> **POKEBOT3DS-CFW currently supports Pokémon Alpha Sapphire only.**
+> **Pokebot3DS-CFW currently targets Pokémon Omega Ruby 1.4 and Pokémon Alpha Sapphire 1.4 on real 3DS hardware.**
 >
-> **English is the only in-game language currently hardware verified.** Other languages remain **UNVERIFIED** until separately tested.
+> English is the currently hardware-verified game language. Other languages remain unverified until separately tested.
+
+Pokebot3DS-CFW is a Windows Qt application paired with a customised Nexus3DS-based `boot.firm`. The firmware exposes a small read-only RAM bridge and an acknowledged HID/touch input bridge on UDP `4952`.
+
+The bot treats validated Pokémon RAM as the source of truth. OCR or image matching is **not** used as shiny authority.
 
 ---
 
-## Project progress
+## Current validated ORAS support
 
-### Current Alpha Sapphire starter release — **90%**
+| Area | Alpha Sapphire 1.4 | Omega Ruby 1.4 |
+|---|---|---|
+| Game detection | ✅ `...C500 / sango-2` | ✅ `...C400 / sango-1` |
+| Trainer / party RAM | ✅ Proven | ✅ Proven |
+| Wild PK6 / battle RAM | ✅ Proven | ✅ Proven |
+| Player X/Z + zone RAM | ✅ Proven | ✅ Proven |
+| Birch starter chooser | ✅ Proven | ✅ Proven |
+| Treecko / Torchic / Mudkip | ✅ Proven | ✅ Proven |
+| Communication-error `code.ips` | ✅ Hardware proven | ✅ Hardware proven |
+| Whole-game Wild terrain DB | ✅ Proven | ✅ Shared ORAS topology proven |
+| Wild Walk / Run backend | ✅ Hardware proven | ✅ Shared backend enabled |
+| Acro Bunny backend | ✅ 10/10 proof | ✅ Shared backend enabled |
 
-```text
-██████████████████░░  90%
-```
-
-The Alpha Sapphire starter-hunting core is hardware validated. Remaining work in this release scope is mainly standalone EXE validation, release packaging, UI completion and broader stop-point testing.
-
-### Wider POKEBOT3DS-CFW roadmap — **38%**
-
-```text
-████████░░░░░░░░░░░░  38%
-```
-
-The wider roadmap includes Omega Ruby parity, RAM-based wild hunts, static encounters, additional games and language validation.
-
-> Percentages are roadmap estimates, not automated code-coverage metrics.
-
-| Area | Progress | Status |
-|---|---:|---|
-| Nexus3DS read-only RAM bridge | **100%** | ✅ Hardware proven |
-| Alpha Sapphire RAM mapping | **100%** | ✅ Proven |
-| Torchic starter backend | **100%** | ✅ Proven |
-| Treecko starter backend | **100%** | ✅ Proven |
-| Mudkip starter backend | **100%** | ✅ Proven |
-| `code.ips` ON reset route | **100%** | ✅ 34/34 Torchic validation |
-| PK6 validation + shiny authority | **100%** | ✅ RAM authoritative |
-| Qt dashboard core | **80%** | 🟢 Dashboard / Hunts / Settings live |
-| Stats / encounter history | **80%** | 🟢 Core persistence live |
-| Immediate Stop behaviour | **75%** | 🟡 Implemented; broader hardware validation pending |
-| GitHub/setup documentation | **90%** | 🟢 Main setup flow documented |
-| Alpha Sapphire language validation | **14%** | 🟡 English verified; others unverified |
-| Omega Ruby RAM parity | **0%** | ⚪ Not started |
-| RAM-based wild hunting | **10%** | ⚪ Architecture planned / early authority known |
-| RAM-based static hunting | **0%** | ⚪ Deferred |
-| XY / Gen 7 support | **0%** | ⚪ Future roadmap |
+Omega Ruby completed the finite automated starter reset validation **6/6**, including two successful cycles for each Hoenn starter. The three locked starter modules are shared between the two ORAS profiles rather than duplicated.
 
 ---
 
-## Do I need Python?
+## HUNTS — ORAS encounter browser
 
-**No — not for the finished Windows EXE release.**
+The **HUNTS** tab is now an encounter browser rather than a settings page.
 
-End users do **not** need to install:
+Locations are separated by encounter environment/method so different hunt types are not mixed together. Depending on the location this includes:
 
-- Python
-- pip
-- PySide6
-- Qt
-- PyInstaller
-- `RUN_REQUIREMENTS.bat`
+- Grass
+- Tall Grass
+- Cave
+- Surf / Water
+- Ocean
+- Rock Smash
+- Old Rod
+- Good Rod
+- Super Rod
+- Horde
+- **DexNav Exclusive**
 
-The finished application uses a PyInstaller **onedir** bundle. Python, PySide6/Qt and the required Python modules are included inside the application folder.
+The 3-slot ORAS encounter table that some editing tools label `Swarm` is displayed as **DexNav Exclusive**, matching how those encounters are actually obtained in ORAS.
 
-### Keep the whole application folder
+Each Pokémon card supports:
 
-```text
-POKEBOT3DS-CFW/
-├─ POKEBOT3DS-CFW.exe
-├─ _internal/
-├─ assets/
-├─ 3ds_sd/
-│  ├─ boot.firm
-│  └─ luma/
-│     └─ titles/
-│        └─ 000400000011C500/
-│           └─ code.ips
-├─ HOW_TO_USE.txt
-└─ README.md
-```
+- normal artwork
+- shiny artwork
+- species/name
+- level range
+- encounter/gift information
+- persistent lifetime **Shinies Found**
 
-Do not remove `_internal` or move only the EXE elsewhere.
+### Route 101 starters
 
----
+Route 101 additionally shows Professor Birch's starter choices as separate sections:
 
-## Firmware used by POKEBOT3DS-CFW
+| Group | Pokémon | Unlock |
+|---|---|---|
+| Hoenn | Treecko, Torchic, Mudkip | Opening Route 101 event |
+| Johto | Chikorita, Cyndaquil, Totodile | First Hall of Fame + meet Zinnia |
+| Unova | Snivy, Tepig, Oshawott | Complete the Delta Episode |
+| Sinnoh | Turtwig, Chimchar, Piplup | Enter the Hall of Fame a second time |
 
-POKEBOT3DS-CFW does **not** use a stock Luma3DS `boot.firm`.
+All are Lv. 5 gift choices.
 
-The supplied firmware is based on **[Nexus3DS](https://github.com/2b-zipper/Nexus3DS)**, with custom POKEBOT3DS-CFW modifications that add a **read-only RAM bridge** for the game.
-
-| Function | Port |
-|---|---:|
-| Read-only RAM bridge | UDP **4952** |
-| Nexus3DS/Luma-derived InputRedirection | UDP **4950** |
-
-RAM is the authority for Pokémon encounter and shiny decisions. OCR/image shiny detection is not used.
+**Automation status:** the Hoenn trio is hardware-proven. The Johto/Unova/Sinnoh entries are present in the browser, but their automated selection/reset flows remain **not yet wired** until they receive their own RAM/state proof.
 
 ---
 
-## First-time 3DS setup
+## Safety model
 
-### 1. Back up your SD card
+For an authoritative starter or wild encounter:
 
-Back up important SD-card files and save data before replacing firmware or adding patches.
+1. Reach the required RAM-confirmed game-state boundary.
+2. Perform a bounded PK6 read.
+3. Validate structure/checksum/species and required identity fields.
+4. Calculate shiny state from RAM.
+5. **Shiny = absolute HOLD.**
+6. Only validated non-shiny authority permits the next reset/escape action.
 
-### 2. Install the supplied `boot.firm`
+Unexpected state, wrong species, checksum failure, RAM failure or controller safety failure causes a HOLD rather than blind continuation.
 
-Copy:
+Core principles:
 
-```text
-3ds_sd\boot.firm
-```
-
-to:
-
-```text
-SD:\boot.firm
-```
-
-Back up the previous `boot.firm` first DO NOT DELETE IT RENAME IF NEEDED!.
-
-### 3. Install the Alpha Sapphire `code.ips`
-
-Copy:
-
-```text
-3ds_sd\luma\titles\000400000011C500\code.ips
-```
-
-to:
-
-```text
-SD:\luma\titles\000400000011C500\code.ips
-```
-
-The current patch is for **Pokémon Alpha Sapphire only**.
-
-### 4. Enable game patching
-
-1. Fully power off the 3DS.
-2. Hold **SELECT**.
-3. While holding SELECT, power on the 3DS.
-4. Enable **game patching** in the Nexus3DS/Luma-derived configuration menu.
-5. Save and exit.
-
-### 5. Start InputRedirection
-
-1. Start Pokémon Alpha Sapphire.
-2. Open Rosalina with **L + D-Pad Down + Select**.
-3. Open **Miscellaneous options**.
-4. Start **InputRedirection**.
-5. Exit Rosalina and return to the game.
+- no RAM writes for shiny decisions
+- no OCR/image shiny authority
+- bounded RAM reads rather than continuous Pokémon polling
+- validated movement/terrain containment
+- new low-level paths are proven standalone before being promoted
 
 ---
 
-## Starting POKEBOT3DS-CFW
+## 3DS files
 
-For the finished EXE release, simply launch:
-
-```text
-POKEBOT3DS-CFW.exe
-```
-
-The application permanently uses the **standard native Windows frame** with native minimise, maximise/restore, close, title-bar dragging and edge/corner resizing.
-
----
-
-## Configure the bot
-
-In **Settings**, confirm:
-
-- 3DS IP address
-- RAM bridge port: `4952`
-- InputRedirection port: `4950`
-- whether `code.ips` is ON or OFF
-
-### `code.ips` ON
+The release contains:
 
 ```text
-Reset
-→ Title
-→ Continue
-→ Field / Birch Bag
+3ds_sd/
+├─ boot.firm
+└─ luma/
+   └─ titles/
+      ├─ 000400000011C400/
+      │  └─ code.ips        # Omega Ruby 1.4
+      └─ 000400000011C500/
+         └─ code.ips        # Alpha Sapphire 1.4
 ```
 
-Communication-error dismissal is disabled in this mode. An unexpected communication-error state causes a safety HOLD rather than blind dismissal inputs.
+Back up your existing `boot.firm` before replacing it.
 
-### `code.ips` OFF
+The current controller/RAM bridge uses **UDP 4952**. The `code.ips` files are separate game patches; they are not the controller.
+
+---
+
+## Running from source
+
+Install the Python requirements and launch:
 
 ```text
-Reset
-→ Title
-→ Continue
-→ Communication Error
-→ RAM-confirmed dismissal
-→ Field / Birch Bag
+RUN_Pokebot3DS-CFW.bat
 ```
 
-The bot uses bounded RAM-gated communication-error recovery.
+The desktop UI uses PySide6 and keeps the standard native Windows frame.
 
 ---
 
-## Current validated starter results
+## Building the Windows EXE
 
-| Starter | Species | Validation | Status |
-|---|---:|---:|---|
-| Treecko | #252 | 10/10 baseline | ✅ |
-| Torchic | #255 | 10/10 baseline | ✅ |
-| Mudkip | #258 | 10/10 baseline | ✅ |
-
-The current `code.ips` ON reset-route policy later completed a **34/34 Torchic hardware validation run** with:
-
-- 34 completed encounters
-- 34 PASS
-- 0 safety HOLDs
-- 0 failures
-- 0 transport retries
-- 35/35 `Field + PSS` Birch-bag authority probes passing
-- mean encounter time around **41.88 seconds**
-- approximately **86 encounters/hour**
-
----
-
-## RAM shiny safety
+The source package now includes:
 
 ```text
-valid non-shiny  → automation may continue
-shiny            → ABSOLUTE HOLD
-invalid data     → HOLD
-wrong species    → HOLD
-checksum error   → HOLD
-TID/SID mismatch → HOLD
-RAM/state error  → HOLD
+BUILD_EXE.bat
+Pokebot3DS-CFW.spec
+build_tools/prepare_icon.py
 ```
 
-A validated RAM-authoritative shiny must never be intentionally reset over.
+Run `BUILD_EXE.bat` on a Windows build PC. It creates an isolated build environment, installs PyInstaller, prepares the multi-resolution Windows icon from the approved repository artwork, and builds in **onedir** mode:
+
+```text
+dist/
+└─ Pokebot3DS-CFW/
+   ├─ Pokebot3DS-CFW.exe
+   ├─ _internal/
+   ├─ assets/
+   ├─ data/
+   ├─ 3ds_sd/
+   ├─ README.md
+   ├─ README_EXE.md
+   └─ HOW_TO_USE.txt
+```
+
+Normal users should receive the **entire folder**, not the `.exe` alone.
+
+> [!WARNING]
+> Do not describe a Windows EXE release as standalone-validated until the exact finished `dist\Pokebot3DS-CFW\` folder has been tested on a clean Windows machine/VM without Python installed.
+
+The approved project artwork remains `POKEBOT3DS-CFW-icon.png`; the builder converts it into `assets/pokebot_icon.ico` with multiple Windows icon sizes.
 
 ---
 
-## STOP behaviour
+## Persistent data
 
-**STOP is immediate.**
+User-specific settings/stats are stored under:
 
-When Stop is pressed:
+```text
+%APPDATA%\Pokebot-3DS\
+```
 
-- cancellation is requested immediately
-- controller state is forced back to neutral
-- cancellable route sleeps and state waits stop
-- the bot does not deliberately finish the cycle
-- the bot does not deliberately return to the Birch bag first
-
-A bounded RAM request already waiting for a network reply may still need to reach its configured timeout, but no new gameplay input should be authorized after Stop.
+The encounter browser's per-species shiny totals are stored persistently, allowing the same Pokémon to show one lifetime shiny total even when it appears on multiple routes or encounter types.
 
 ---
 
-## Language support
+## Current roadmap
 
-| Language | Status |
-|---|---|
-| English | ✅ **VERIFIED** |
-| Japanese | ⚪ Unverified |
-| French | ⚪ Unverified |
-| German | ⚪ Unverified |
-| Italian | ⚪ Unverified |
-| Spanish | ⚪ Unverified |
-| Korean | ⚪ Unverified |
+### ORAS
+- [x] Alpha Sapphire starter RAM backend
+- [x] Omega Ruby RAM parity
+- [x] Omega Ruby Hoenn starter one-shots
+- [x] Omega Ruby finite starter reset cycle 6/6
+- [x] OR + AS `code.ips` reset-route patches
+- [x] Wild PK6 authority
+- [x] automatic Run after validated non-shiny
+- [x] Walk/Run finite Wild proof
+- [x] Acro Bunny finite Wild proof
+- [x] whole-game terrain database
+- [x] ORAS automatic game profiles
+- [x] encounter browser
+- [ ] Johto postgame starter automation
+- [ ] Unova postgame starter automation
+- [ ] Sinnoh postgame starter automation
+- [ ] Surf/Fishing production automation
+- [ ] static encounter production automation
+- [ ] Mach Bike terrain-safe proof
 
----
-
-## Roadmap
-
-### Next
-
-- [ ] Validate immediate Stop at multiple awkward points
-- [ ] Build and clean-machine test the standalone Windows EXE
-- [ ] Publish the first GitHub EXE release
-- [ ] Finish Statistics page
-- [ ] Finish Tools page
-- [ ] Finish Testing / Support page
-
-### Omega Ruby
-
-- [ ] Detect Omega Ruby title/process
-- [ ] Prove Birch-bag anchors
-- [ ] Prove TID/SID
-- [ ] Prove party0
-- [ ] Prove Poke3Select states/slots
-- [ ] Prove battle-state mapping
-- [ ] Torchic 1 → 10
-- [ ] Treecko 1 → 10
-- [ ] Mudkip 1 → 10
-
-### Wild hunts
-
-- [ ] Manual RAM authority observations
-- [ ] Fresh encounter boundary
-- [ ] Shiny absolute HOLD
-- [ ] Automatic Run after validated non-shiny
-- [ ] Movement-only module
-- [ ] Grass containment / map geometry
-- [ ] Finite 1 → 5 → 10 → 30–50 validation
-- [ ] Unlimited mode
-
-### Later
-
-- [ ] XY
+### Later games
+- [ ] Pokémon X / Y
 - [ ] Sun / Moon
 - [ ] Ultra Sun / Ultra Moon
-- [ ] RAM-based static encounters
-- [ ] Additional language validation
-
----
-
-## If the bot HOLDs
-
-A safety HOLD is intentional. Export and retain the support ZIP so the exact failing RAM/state gate can be diagnosed.
-
----
-
-## Windows SmartScreen / antivirus
-
-Unsigned self-built applications may trigger a Windows SmartScreen or antivirus reputation warning. That is separate from whether Python is installed.
-
----
-
-## Standalone EXE validation
-
-Before publishing an EXE release, test the **exact finished distribution folder** on a clean Windows system or VM with no Python installed.
-
-- [ ] EXE launches without Python installed
-- [ ] shiny Kyogre icon appears on EXE/title bar/taskbar/Alt+Tab
-- [ ] Dashboard opens
-- [ ] Hunts page opens
-- [ ] Settings page opens
-- [ ] settings persist
-- [ ] RAM bridge connection works
-- [ ] InputRedirection works
-- [ ] assets and shiny sound load
-- [ ] support ZIP export works
-- [ ] Alpha Sapphire starter hunt starts
-- [ ] STOP works
-- [ ] no missing-module or missing-DLL error occurs
+- [ ] Gen 2 VC Gold / Silver / Crystal integration
+- [ ] additional language validation
 
 ---
 
 ## Compatibility
 
-### Currently supported
-
-- ✅ Pokémon Alpha Sapphire
-- ✅ Title ID `000400000011C500`
-- ✅ English language
-- ✅ Treecko / Torchic / Mudkip starter hunts
-- ✅ Custom Nexus3DS RAM bridge
-- ✅ InputRedirection UDP 4950
-- ✅ RAM bridge UDP 4952
-- ✅ `code.ips` ON reset route
+### Supported / hardware validated
+- ✅ Real Nintendo 3DS / New Nintendo 3DS hardware
+- ✅ Pokémon Omega Ruby 1.4
+- ✅ Pokémon Alpha Sapphire 1.4
+- ✅ English
+- ✅ Custom Nexus3DS-based Pokebot3DS-CFW bridge
+- ✅ UDP 4952 RAM + acknowledged input
 - ✅ Windows Qt dashboard
 
-### Not yet supported / verified
+### Not claimed yet
+- ❌ emulator support
+- ❌ non-English game languages
+- ❌ postgame Johto/Unova/Sinnoh starter automation
+- ❌ production static hunts
+- ❌ production Surf/Fishing
+- ❌ XY / Gen 7 production support
 
-- ❌ Omega Ruby
-- ❌ XY
-- ❌ Sun / Moon
-- ❌ gen2 VC G/S/C
-- ❌ Ultra Sun / Ultra Moon
-- ❌ non-English language modes
-- ❌ production wild-hunt automation
-- ❌ production static-hunt automation
+---
+
+## Inspiration
+
+Pokebot3DS-CFW takes inspiration from automation projects including:
+
+- [pokebot-nds](https://github.com/wyanido/pokebot-nds/)
+- [pokebot-gen3](https://github.com/40cakes/pokebot-gen3)
+- [PokemonAutomation](https://github.com/PokemonAutomation)
 
 ---
 
 ## Disclaimer
 
-POKEBOT3DS-CFW is an independent homebrew/automation project. Use it only with you actual 3DS hardware this is NOT made for an EMULATOR, Keep backups of your SD card and important save data before testing custom firmware, patches or automation.
+Pokebot3DS-CFW is an independent homebrew/automation project. Use it only with hardware, games and save data you are authorised to use or modify. Keep backups of your SD card and important save data before testing custom firmware, patches or automation.
