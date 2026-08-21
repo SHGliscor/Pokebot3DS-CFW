@@ -163,30 +163,6 @@ The current controller/RAM bridge uses **UDP 4952**. The `code.ips` files are se
 
 ---
 
-## Running from source
-
-Install the Python requirements and launch:
-
-```text
-RUN_Pokebot3DS-CFW.bat
-```
-
-The desktop UI uses PySide6 and keeps the standard native Windows frame.
-
----
-
-## Building the Windows EXE
-
-The source package now includes:
-
-```text
-BUILD_EXE.bat
-Pokebot3DS-CFW.spec
-build_tools/prepare_icon.py
-```
-
-Run `BUILD_EXE.bat` on a Windows build PC. It creates an isolated build environment, installs PyInstaller, prepares the multi-resolution Windows icon from the approved repository artwork, and builds in **onedir** mode:
-
 ```text
 dist/
 └─ Pokebot3DS-CFW/
@@ -198,15 +174,6 @@ dist/
    ├─ README.md
    ├─ README_EXE.md
    └─ HOW_TO_USE.txt
-```
-
-Normal users should receive the **entire folder**, not the `.exe` alone.
-
-> [!WARNING]
-> Do not describe a Windows EXE release as standalone-validated until the exact finished `dist\Pokebot3DS-CFW\` folder has been tested on a clean Windows machine/VM without Python installed.
-
-The approved project artwork remains `POKEBOT3DS-CFW-icon.png`; the builder converts it into `assets/pokebot_icon.ico` with multiple Windows icon sizes.
-
 ---
 
 ## Persistent data
@@ -228,7 +195,7 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - [x] Omega Ruby RAM parity
 - [x] Omega Ruby Hoenn starter one-shots
 - [x] Omega Ruby finite starter reset cycle 6/6
-- [x] OR + AS `code.ips` reset-route patches
+- [x] OR + AS `code.ips` reset-route patches, this removed the annoying communication error screen when using InputReirection with ORAS
 - [x] Wild PK6 authority
 - [x] automatic Run after validated non-shiny
 - [x] Walk/Run finite Wild proof
@@ -241,7 +208,6 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - [ ] Sinnoh postgame starter automation
 - [ ] Surf/Fishing production automation
 - [ ] static encounter production automation
-- [ ] Mach Bike terrain-safe proof
 
 ### Later games
 - [ ] Pokémon X / Y
@@ -264,7 +230,7 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - ✅ Windows Qt dashboard
 
 ### Not claimed yet
-- ❌ emulator support
+- ❌ emulator support wont ever be supported by myself i dont have the means to port it to emulator 
 - ❌ non-English game languages
 - ❌ postgame Johto/Unova/Sinnoh starter automation
 - ❌ production static hunts
@@ -275,4 +241,4 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 
 ## Disclaimer
 
-Pokebot3DS-CFW is an independent homebrew/automation project. Use it only with hardware, games and save data you are authorised to use or modify. Keep backups of your SD card and important save data before testing custom firmware, patches or automation.
+Pokebot3DS-CFW is an independent homebrew/automation project. Use it only with real 3DS hardware. Keep backups of your SD card and important save data before testing custom firmware, patches or automation.
