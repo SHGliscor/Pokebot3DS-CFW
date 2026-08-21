@@ -43,6 +43,34 @@ Pokebot3DS-CFW takes inspiration from excellent Pokémon automation projects inc
 
 Pokebot3DS-CFW is an independent implementation built around RAM-authoritative Gen 6 shiny hunting, acknowledged 3DS input and real-hardware safety gates.
 
+---
+
+## 🤖 Project Transparency & Use of AI
+
+I want to be **100% transparent** with everyone who uses or contributes to this shiny hunting bot.
+
+This project is currently developed by **one person — me**. I also work full-time and I'm a dad to a one-year-old, so realistically I only get a few hours each day to work on the project.
+
+Because of that, **AI-assisted development ("vibe coding") is part of the development process**.
+
+Some parts of the project have been heavily assisted by AI, particularly the dashboard/UI and areas where I've needed help debugging, restructuring, or correcting code I've written.
+
+The backend and core bot logic, however, are largely based on my own work, testing, research, experimentation, and implementation. I would estimate that roughly **85% of the backend logic originates from my own work**, with AI helping me debug problems, improve implementations, and develop things faster than I would be able to alone.
+
+The dashboard/UI has been much more heavily AI-assisted.
+
+I know that some people are strongly against the use of AI in software development, and I understand many of the concerns surrounding it. I agree with quite a few of those concerns myself.
+
+At the same time, AI assistance has made it possible for me to continue developing this project at the pace I currently can while balancing work and family life.
+
+I don't want to hide that or pretend the entire project was written without assistance.
+
+If the use of AI means you would rather not use this project, I completely understand. I would much rather be upfront about how the project is developed and allow people to make that decision for themselves.
+
+Thank you to everyone who tests the bot, reports bugs, provides feedback, or simply follows the project. ❤️
+
+---
+
 > [!IMPORTANT]
 > **Pokebot3DS-CFW currently targets Pokémon Omega Ruby 1.4 and Pokémon Alpha Sapphire 1.4 on real 3DS hardware.**
 >
