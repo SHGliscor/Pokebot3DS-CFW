@@ -76,7 +76,89 @@ Thank you to everyone who tests the bot, reports bugs, provides feedback, or sim
 
 Pokebot3DS-CFW is a Windows Qt application paired with a customised Nexus3DS-based `boot.firm`. The firmware exposes a small read-only RAM bridge and an acknowledged HID/touch input bridge on UDP `4952`.
 
-The bot treats validated Pokémon RAM as the source of truth. OCR or image matching is **not** used as shiny authority. I want to make this very clear NOTHING is written to RAM its not an on air memory writer like pkmn-ntr is. this is Purley a shiny hunting bot like my inspirations above so go check them out also!
+The bot treats validated Pokémon RAM as the source of truth. OCR or image matching is **not** used as shiny authority.
+
+There is deliberately **no game-RAM write command** in the Pokebot bridge. RAM is used to observe the game and make safe automation decisions; Pokémon and encounter results are not modified.
+
+---
+
+## How is Pokebot3DS-CFW different from PKMN-NTR?
+
+Pokebot3DS-CFW is **not a fork, replacement, or modified version of [PKMN-NTR](https://github.com/drgoku282/PKMN-NTR)**.
+
+Both projects can communicate with a Nintendo 3DS and inspect Pokémon data in memory, but they are built for different purposes and use different architectures.
+
+| Pokebot3DS-CFW | PKMN-NTR |
+|---|---|
+| Built specifically for **shiny-hunting automation** | General-purpose Pokémon memory editing/control tooling |
+| Uses a **custom Nexus3DS-derived Pokebot bridge** | Built around **NTR-CFW / NTRClient** |
+| Game RAM access is intentionally **read-only** | Supports reading and writing game memory |
+| Does **not** expose Pokémon injection or editing | Can be used to edit or inject game data/Pokémon |
+| Does **not** use the NTR debugger or GDB | Uses NTR's remote memory/debugging architecture |
+| RAM determines the encounter result, then normal controller/touch input plays the game | Memory access can be used for editing as well as automation |
+| Invalid or uncertain authority causes a **safety HOLD** | Not designed around Pokebot3DS-CFW's fail-closed shiny-hunting state machine |
+
+### How RAM reading works
+
+Pokebot3DS-CFW does not attach a debugger to the game. Instead, the custom `boot.firm` adds a small read-only service inside Rosalina/Nexus3DS.
+
+1. The Windows bot sends a bounded RAM request to the 3DS over **UDP port 4952**.
+2. The Pokebot bridge identifies the supported running game by title ID and opens the game process internally.
+3. Before reading, the bridge checks the requested memory region and its permissions.
+4. The requested bytes are read through the 3DS process-memory services and returned to the PC.
+5. The PC decodes the returned game structure — for example a PK6 — and validates the checksum, species and other required identity/state fields.
+6. Shiny state is calculated from the data that the game itself already generated.
+7. If the data or game state is invalid, missing or uncertain, the bot **HOLDs instead of authorising a reset**.
+
+The bridge protocol deliberately provides **no command that writes back into the game's RAM**. It cannot turn a Pokémon shiny, change its PID/IVs, inject a Pokémon, or alter the encounter result.
+
+```text
+Pokebot3DS-CFW on PC
+        |
+        |  bounded UDP 4952 read request
+        v
+Pokebot bridge in Nexus3DS / Rosalina
+        |
+        |  read-only process-memory access
+        v
+Pokémon OR / AS RAM
+        |
+        |  requested bytes returned
+        v
+Validate PK6 / game state -> shiny decision -> continue or HOLD
+```
+
+### How controller and touchscreen inputs are sent
+
+Inputs use the same custom Pokebot bridge rather than NTR. They are kept separate from the RAM-reading authority: an input command controls the game, but it does not modify the game's memory.
+
+1. The PC sends an input command to the bridge over **UDP 4952** with a unique sequence ID.
+2. The 3DS acknowledges the request so the PC knows whether the command was accepted.
+3. The bridge applies the requested HID state through the 3DS input path, producing normal button/directional input.
+4. Timed HID commands automatically release after their requested hold period and can include a settle period.
+5. Native touchscreen commands can press an exact bottom-screen coordinate without requiring a capture card or mouse automation.
+6. Latched HID commands can keep a button held until an explicit release is sent when a hunt requires a continuous hold.
+7. `RELEASE_ALL` provides an emergency neutral state, and sequence-ID deduplication prevents a retried UDP packet from creating a second unintended gameplay press.
+
+```text
+Pokebot3DS-CFW on PC
+        |
+        |  sequence-numbered input request
+        v
+Pokebot input bridge
+        |
+        +--> Button / D-pad / Circle-pad style HID input
+        +--> Native touchscreen pulse
+        +--> Latched hold when required
+        |
+        v
+Normal 3DS gameplay input
+        |
+        +--> ACK / status returned to the PC
+        +--> RELEASE_ALL available as a safety path
+```
+
+This separation is intentional: **RAM tells the bot what happened; controller/touch input tells the game what to do next.** RAM is never written to in order to force a hunt result.
 
 ---
 
