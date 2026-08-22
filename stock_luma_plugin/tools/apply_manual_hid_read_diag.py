@@ -91,7 +91,9 @@ helpers = r'''    static u32 ReadPhysicalPadRegister()
 
         if (gManualHidMap != nullptr)
         {
-            mappableFree(const_cast<u32 *>(reinterpret_cast<const u32 *>(gManualHidMap)));
+            // libctru's mappableFree() currently only releases allocator bookkeeping.
+            // The C-style void* cast intentionally drops volatile for that API.
+            mappableFree((void *)gManualHidMap);
             gManualHidMap = nullptr;
         }
 
