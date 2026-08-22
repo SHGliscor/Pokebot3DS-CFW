@@ -48,13 +48,15 @@ jobs:
         run: |
           set -eux
           "$DEVKITARM/bin/arm-none-eabi-g++" --version | head -1
-          # libctru's 3DS socket headers do not expose Linux SO_RCVTIMEO.
-          # The bridge already closes/shuts down the UDP socket during Stop(),
-          # so remove only this host-specific timeout setup for the hardware proof.
-          sed -i '/timeval timeout{}/,+2d' stock_luma_plugin/Sources/Main.cpp
           python3 stock_luma_plugin/tools/apply_status_overlay.py
-          grep -q 'Pokebot Bridge v0p2' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          sed -i 's/Pokebot Bridge v0p2/Pokebot Bridge v0p3/' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'Pokebot Bridge v0p3' stock_luma_plugin/Sources/BridgeOverlay.hpp
           grep -q 'BridgeOverlay::RecordPacket' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'srvInit()' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'kSocBufferSize = 0x10000' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'local.sin_addr.s_addr = gethostid()' stock_luma_plugin/Sources/Main.cpp
+          ! grep -q 'SO_RCVTIMEO' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'Pokebot3DS-3GX-v0p3' stock_luma_plugin/Sources/Main.cpp
           make -C stock_luma_plugin \
             CTRPFLIB=/tmp/ctrpf/Library \
             CTRPFHEADERS=/tmp/ctrpf/Library/include
@@ -66,6 +68,6 @@ jobs:
       - name: Upload plugin
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot3DSBridge-v0p2-StatusOverlay
+          name: Pokebot3DSBridge-v0p3-SocInitFix
           path: stock_luma_plugin/Pokebot3DSBridge.3gx
           if-no-files-found: error
