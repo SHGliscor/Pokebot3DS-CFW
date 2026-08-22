@@ -30,17 +30,36 @@ jobs:
           export WGETRC="$tmpdir/wgetrc"
           wget -O "$tmpdir/install-devkitpro-pacman" https://apt.devkitpro.org/install-devkitpro-pacman
           chmod +x "$tmpdir/install-devkitpro-pacman"
-          sudo env WGETRC="$tmpdir/wgetrc" "$tmpdir/install-devkitpro-pacman"
+          sudo env WGETRC="$tmpdir/wgetrc" "$tmpdir/install-devkitpro-pacman" || {
+            sleep 5
+            sudo dpkg --configure -a || true
+          }
 
       - name: Install 3DS toolchain and CTRPluginFramework
         run: |
-          sudo dkp-pacman -Sy --noconfirm
+          for attempt in 1 2 3; do
+            sudo dkp-pacman -Sy --noconfirm && break
+            sleep $((attempt * 5))
+          done
           sudo dkp-pacman -S --needed --noconfirm 3ds-dev
           conf=/opt/devkitpro/pacman/etc/pacman.conf
-          printf '\n[thepixellizeross-lib]\nServer = https://thepixellizeross.gitlab.io/packages/any\nSigLevel = Optional\n' | sudo tee -a "$conf" >/dev/null
-          printf '\n[thepixellizeross-linux]\nServer = https://thepixellizeross.gitlab.io/packages/x86_64/linux\nSigLevel = Optional\n' | sudo tee -a "$conf" >/dev/null
-          sudo dkp-pacman -Sy --noconfirm
+          if ! grep -Fxq '[thepixellizeross-lib]' "$conf"; then
+            printf '\n[thepixellizeross-lib]\nServer = https://thepixellizeross.gitlab.io/packages/any\nSigLevel = Optional\n' | sudo tee -a "$conf" >/dev/null
+          fi
+          if ! grep -Fxq '[thepixellizeross-linux]' "$conf"; then
+            printf '\n[thepixellizeross-linux]\nServer = https://thepixellizeross.gitlab.io/packages/x86_64/linux\nSigLevel = Optional\n' | sudo tee -a "$conf" >/dev/null
+          fi
+          for attempt in 1 2 3; do
+            sudo dkp-pacman -Sy --noconfirm && break
+            sleep $((attempt * 5))
+          done
           sudo dkp-pacman -S --needed --noconfirm libctrpf 3gxtool
+
+      - name: Fetch matching CTRPluginFramework headers
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/Tekito-256/CTRPluginFramework.git /tmp/ctrpf-src
+          git -C /tmp/ctrpf-src checkout 1f2e34c9d4289873a6601cb5a4631d991a0fdf36 -- Library/include
+          test -f /tmp/ctrpf-src/Library/include/types.h
 
       - name: Build plugin
         env:
@@ -49,7 +68,7 @@ jobs:
         run: |
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           arm-none-eabi-g++ --version | head -1
-          make -C stock_luma_plugin
+          make -C stock_luma_plugin CTRPFHEADERS=/tmp/ctrpf-src/Library/include
           test -f stock_luma_plugin/Pokebot3DSBridge.3gx
           ls -lh stock_luma_plugin/Pokebot3DSBridge.3gx
 
