@@ -40,10 +40,14 @@ jobs:
           git clone https://github.com/Tekito-256/CTRPluginFramework.git /tmp/ctrpf
           git -C /tmp/ctrpf checkout 1f2e34c9d4289873a6601cb5a4631d991a0fdf36
           sed -i 's/-Wall -Werror /-Wall /' /tmp/ctrpf/Library/Makefile
+          python3 stock_luma_plugin/tools/patch_ctrpf_hid_map_locator.py
+          grep -q 'gPokebotSharedMapCount' /tmp/ctrpf/Library/source/pluginInit.cpp
+          grep -q 'gPokebotHidHeuristicAddr' /tmp/ctrpf/Library/source/pluginInit.cpp
           make -C /tmp/ctrpf/Library lib/libctrpf.a
           test -f /tmp/ctrpf/Library/lib/libctrpf.a
           test -f /tmp/ctrpf/Library/include/types.h
           "$DEVKITARM/bin/arm-none-eabi-nm" /tmp/ctrpf/Library/lib/libctrpf.a | grep -q ' svcControlMemoryUnsafe$'
+          "$DEVKITARM/bin/arm-none-eabi-nm" /tmp/ctrpf/Library/lib/libctrpf.a | grep -q ' gPokebotSharedMapCount$'
 
       - name: Build Pokebot3DS plugin
         run: |
@@ -54,21 +58,22 @@ jobs:
           python3 stock_luma_plugin/tools/apply_hid_current_sample_fix.py
           python3 stock_luma_plugin/tools/apply_game_hid_memory_fix.py
           python3 stock_luma_plugin/tools/apply_hid_diagnostic_overlay.py
-          sed -i 's/Pokebot Bridge v0p2/Pokebot Bridge v0p7/' stock_luma_plugin/Sources/BridgeOverlay.hpp
-          grep -q 'Pokebot Bridge v0p7' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          python3 stock_luma_plugin/tools/apply_hid_map_locator.py
+          sed -i 's/Pokebot Bridge v0p2/Pokebot Bridge v0p8/' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'Pokebot Bridge v0p8' stock_luma_plugin/Sources/BridgeOverlay.hpp
           grep -q 'BridgeOverlay::RecordPacket' stock_luma_plugin/Sources/Main.cpp
           grep -q 'srvInit()' stock_luma_plugin/Sources/Main.cpp
           grep -q 'kSocBufferAddress = 0x07500000u' stock_luma_plugin/Sources/Main.cpp
           grep -q 'kSocBufferSize = 0x20000' stock_luma_plugin/Sources/Main.cpp
           grep -q 'svcControlMemoryUnsafe' stock_luma_plugin/Sources/Main.cpp
           grep -q 'local.sin_addr.s_addr = gethostid()' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'InjectCurrentHidKey' stock_luma_plugin/Sources/Main.cpp
           grep -q 'settings.UseGameHidMemory = true' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'RecordHidSample' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'HIDMAP:%s Idx:%lu Changes:%lu' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'gPokebotSharedMapCount' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'HID LOCATOR Maps:%lu' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'Seen:%03lX' stock_luma_plugin/Sources/BridgeOverlay.hpp
           ! grep -q 'Controller::InjectKey(keys)' stock_luma_plugin/Sources/Main.cpp
           ! grep -q 'SO_RCVTIMEO' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'Pokebot3DS-3GX-v0p7' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'Pokebot3DS-3GX-v0p8' stock_luma_plugin/Sources/Main.cpp
           make -C stock_luma_plugin \
             CTRPFLIB=/tmp/ctrpf/Library \
             CTRPFHEADERS=/tmp/ctrpf/Library/include
@@ -80,6 +85,6 @@ jobs:
       - name: Upload plugin
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot3DSBridge-v0p7-HidDiagnostics
+          name: Pokebot3DSBridge-v0p8-HidLocator
           path: stock_luma_plugin/Pokebot3DSBridge.3gx
           if-no-files-found: error
