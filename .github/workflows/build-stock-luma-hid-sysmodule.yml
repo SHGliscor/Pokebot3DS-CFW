@@ -22,8 +22,12 @@ jobs:
         run: |
           set -eux
           apt-get update
-          apt-get install -y --no-install-recommends cmake make python3 ca-certificates
-          command -v makerom
+          apt-get install -y --no-install-recommends cmake make python3 ca-certificates wget unzip
+          wget -q https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.18.4/makerom-v0.18.4-ubuntu_x86_64.zip -O /tmp/makerom.zip
+          unzip -q /tmp/makerom.zip -d /tmp/makerom
+          install -m755 /tmp/makerom/makerom /usr/local/bin/makerom
+          makerom -h >/dev/null 2>&1 || true
+          test -x /usr/local/bin/makerom
           test -f /opt/devkitpro/cmake/3DS.cmake
 
       - name: Configure
