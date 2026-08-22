@@ -1,0 +1,143 @@
+name: Build Pokebot-Luma
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'luma_pokebot_bridge/**'
+      - '.github/workflows/build-pokebot-luma.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+
+    steps:
+      - name: Checkout Pokebot repo
+        uses: actions/checkout@v4
+
+      - name: Install host tools
+        run: |
+          set -eux
+          apt-get update
+          apt-get install -y --no-install-recommends git python3 python3-pip ca-certificates wget unzip make
+          python3 -m pip install --break-system-packages git+https://github.com/TuxSH/firmtool.git@fdc7085c2394d87ce5dbdfecdf51423e1e7b00a1
+          wget -q https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.18.4/makerom-v0.18.4-ubuntu_x86_64.zip -O /tmp/makerom.zip
+          unzip -q /tmp/makerom.zip -d /tmp/makerom
+          install -m755 /tmp/makerom/makerom /usr/local/bin/makerom
+          command -v firmtool
+          command -v makerom
+
+      - name: Fetch pinned Luma3DS source
+        run: |
+          set -eux
+          git clone https://github.com/LumaTeam/Luma3DS.git Luma3DS
+          cd Luma3DS
+          git checkout d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a
+          test "$(git rev-parse HEAD)" = "d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a"
+
+      - name: Apply Pokebot RAM, Rosalina and additive HID patches
+        run: |
+          set -eux
+          python3 luma_pokebot_bridge/tools/apply_ram_bridge.py
+          python3 luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py
+          python3 luma_pokebot_bridge/tools/apply_pokebot_menu.py
+          python3 luma_pokebot_bridge/tools/apply_additive_input_redirection.py
+          grep -q 'Pokebot-Luma v0p4' Luma3DS/sysmodules/rosalina/source/menus.c
+          grep -q 'PokebotRamBridge_Start' Luma3DS/sysmodules/rosalina/source/menus.c
+          grep -q 'POKEBOT_RAM_PORT       4952' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q '#include "sock_util.h"' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_CMD_READ      = 4' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          ! grep -q 'WriteTarget' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'Pokebot additive HID' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
+          grep -q 'and r1, r1, r2      @ Active-low union' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
+
+      - name: Build boot.firm
+        run: |
+          set -eux
+          make -C Luma3DS -j"$(nproc)"
+          test -s Luma3DS/boot.firm
+          test -s Luma3DS/sysmodules/rosalina/rosalina.elf
+          sha256sum Luma3DS/boot.firm
+
+      - name: Stage hardware-test package
+        run: |
+          set -eux
+          mkdir -p artifact/SD_ROOT artifact/SOURCE_PATCHES artifact/DEBUG_SYMBOLS artifact/PC_TEST
+          cp Luma3DS/boot.firm artifact/SD_ROOT/boot.firm
+          cp luma_pokebot_bridge/tools/apply_pokebot_menu.py artifact/SOURCE_PATCHES/
+          cp luma_pokebot_bridge/tools/apply_additive_input_redirection.py artifact/SOURCE_PATCHES/
+          cp luma_pokebot_bridge/tools/apply_ram_bridge.py artifact/SOURCE_PATCHES/
+          cp luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py artifact/SOURCE_PATCHES/
+          cp luma_pokebot_bridge/tools/test_pokebot_luma_input.py artifact/PC_TEST/
+          cp luma_pokebot_bridge/tools/test_pokebot_luma_ram.py artifact/PC_TEST/
+          cp luma_pokebot_bridge/README.md artifact/
+          cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
+          cp Luma3DS/sysmodules/rosalina/rosalina.elf artifact/DEBUG_SYMBOLS/
+          cp Luma3DS/sysmodules/rosalina/build/rosalina.map artifact/DEBUG_SYMBOLS/ || true
+          cp Luma3DS/sysmodules/rosalina/build/rosalina.lst artifact/DEBUG_SYMBOLS/ || true
+          cat > artifact/FIRST_TEST.txt <<'EOF'
+          Pokebot-Luma v0p4 read-only RAM bridge hardware test
+
+          HARDWARE-PROVEN BEFORE THIS BUILD:
+          - v0p2 menu/reboot foundation
+          - v0p3 synthetic A and START
+          - physical controls and touch remain usable
+          - physical input works during a synthetic hold
+
+          v0p4 preserves that controller path and activates RAM UDP 4952.
+
+          IMPORTANT:
+          1. Keep a copy of the known-good v0p3 boot.firm.
+          2. Replace SD root boot.firm with SD_ROOT/boot.firm.
+          3. Boot normally and launch ORAS.
+          4. Open Rosalina -> Pokebot3DS Bridge...
+          5. Select Enable Both.
+          6. Status should show:
+               Pokebot-Luma v0p4
+               RAM Bridge:       ON
+               RAM result:       0x00000000
+               RAM UDP:          4952
+               Input Controller: ON
+               Input result:     0x00000000
+               Input UDP:        4950
+          7. Return to ORAS. Confirm real buttons and touchscreen still work.
+          8. From INSIDE the extracted PC_TEST folder run:
+               python test_pokebot_luma_ram.py <3DS-IP>
+             Example:
+               python test_pokebot_luma_ram.py 192.168.0.28
+          9. Expected:
+               PING: PASS Pokebot3DS-Luma-v0p4
+               GAME_INFO: PASS
+               QUERY: PASS
+               READ: PASS 32 bytes
+             The default read is 0x20 bytes from game code address 0x00100000.
+          10. Re-open Status. Packets should have increased and Reads >= 1.
+          11. Re-test the already-proven input path if desired:
+               python test_pokebot_luma_input.py <3DS-IP> A
+               python test_pokebot_luma_input.py <3DS-IP> START
+          12. Confirm physical controls/touch still work afterward.
+
+          RAM SAFETY:
+          - QUERY and READ only
+          - maximum READ = 0x200 bytes
+          - no game-memory write command
+          - each read validates the region, maps only required pages, copies,
+            then immediately unmaps
+
+          Do not start normal hunt/endurance testing until this generic RAM
+          smoke test passes on hardware.
+          EOF
+          printf '%s\n' 'Upstream Luma3DS commit: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a' > artifact/SOURCE_PATCHES/UPSTREAM.txt
+          sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
+
+      - name: Upload test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokebot-Luma-v0p4-ReadOnlyRamBridge
+          path: artifact/
+          if-no-files-found: error
