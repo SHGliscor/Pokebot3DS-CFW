@@ -47,7 +47,11 @@ jobs:
       - name: Build Pokebot3DS plugin
         run: |
           set -eux
-          arm-none-eabi-g++ --version | head -1
+          "$DEVKITARM/bin/arm-none-eabi-g++" --version | head -1
+          # libctru's 3DS socket headers do not expose Linux SO_RCVTIMEO.
+          # The bridge already closes/shuts down the UDP socket during Stop(),
+          # so remove only this host-specific timeout setup for the hardware proof.
+          sed -i '/timeval timeout{}/,+2d' stock_luma_plugin/Sources/Main.cpp
           make -C stock_luma_plugin \
             CTRPFLIB=/tmp/ctrpf/Library \
             CTRPFHEADERS=/tmp/ctrpf/Library/include
