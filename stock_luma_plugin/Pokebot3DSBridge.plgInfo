@@ -1,0 +1,18 @@
+Author: SHGliscor / Pokebot3DS-CFW
+
+Version:
+    Major: 0
+    Minor: 1
+    Revision: 0
+
+Targets:
+    - 0x0011C400
+    - 0x0011C500
+
+Title: Pokebot3DS Bridge
+
+Summary: Stock-Luma ORAS RAM/input bridge proof
+
+Description: |
+  Experimental Pokebot3DS-CFW bridge for Pokemon Omega Ruby and Alpha Sapphire.
+  Exposes UDP 4952 read-only RAM and acknowledged additive input without replacing Luma3DS.
