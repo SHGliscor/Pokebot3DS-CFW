@@ -1,0 +1,70 @@
+name: Build Stock-Luma HID Sysmodule
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'stock_luma_hid_sysmodule/**'
+      - '.github/workflows/build-stock-luma-hid-sysmodule.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install host prerequisites
+        run: |
+          set -eux
+          apt-get update
+          apt-get install -y --no-install-recommends cmake make python3 ca-certificates
+          command -v makerom
+          test -f /opt/devkitpro/cmake/3DS.cmake
+
+      - name: Configure
+        run: |
+          set -eux
+          cmake \
+            -S stock_luma_hid_sysmodule \
+            -B build-hid-sysmodule \
+            -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build CXI
+        run: |
+          set -eux
+          cmake --build build-hid-sysmodule -j"$(nproc)"
+          test -f build-hid-sysmodule/0004013000B0B702.cxi
+          ls -lh build-hid-sysmodule/0004013000B0B702.cxi
+          sha256sum build-hid-sysmodule/0004013000B0B702.cxi
+
+      - name: Validate diagnostic-only scope
+        run: |
+          set -eux
+          python3 -m py_compile stock_luma_hid_sysmodule/pc_test/test_hid_sysmodule.py
+          grep -q 'svcMapMemoryBlock.*MEMPERM_READ' stock_luma_hid_sysmodule/source/main.c
+          ! grep -q 'hidInit(' stock_luma_hid_sysmodule/source/main.c
+          ! grep -q 'irrstInit(' stock_luma_hid_sysmodule/source/main.c
+          ! grep -q 'MEMPERM_WRITE' stock_luma_hid_sysmodule/source/main.c
+          ! grep -q 'Inject' stock_luma_hid_sysmodule/source/main.c
+          grep -q '#define PBH_PORT 4953' stock_luma_hid_sysmodule/source/main.c
+
+      - name: Stage test package
+        run: |
+          set -eux
+          mkdir -p artifact/SD_ROOT/luma/sysmodules artifact/PC_TEST
+          cp build-hid-sysmodule/0004013000B0B702.cxi artifact/SD_ROOT/luma/sysmodules/
+          cp stock_luma_hid_sysmodule/pc_test/test_hid_sysmodule.py artifact/PC_TEST/
+          cp stock_luma_hid_sysmodule/README.md artifact/FIRST_TEST_README.md
+
+      - name: Upload sysmodule test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokebot3DS-HID-Sysmodule-v0p1
+          path: artifact/
+          if-no-files-found: error
