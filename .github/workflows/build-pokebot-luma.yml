@@ -42,45 +42,64 @@ jobs:
         run: |
           set -eux
           python3 luma_pokebot_bridge/tools/apply_pokebot_menu.py
-          grep -q 'Pokebot-Luma v0p1' Luma3DS/sysmodules/rosalina/source/menus.c
+          grep -q 'Pokebot-Luma v0p2' Luma3DS/sysmodules/rosalina/source/menus.c
           grep -q 'Pokebot3DS Bridge...' Luma3DS/sysmodules/rosalina/source/menus.c
+          grep -q 'Toggle RAM Bridge' Luma3DS/sysmodules/rosalina/source/menus.c
+          ! grep -q 'PokebotBridge_RefreshTitles' Luma3DS/sysmodules/rosalina/source/menus.c
+          ! grep -q 'snprintf(sPokebot' Luma3DS/sysmodules/rosalina/source/menus.c
 
       - name: Build boot.firm
         run: |
           set -eux
           make -C Luma3DS -j"$(nproc)"
           test -s Luma3DS/boot.firm
+          test -s Luma3DS/sysmodules/rosalina/rosalina.elf
           sha256sum Luma3DS/boot.firm
+          echo 'v0p1 crash address symbolication:'
+          "$DEVKITARM/bin/arm-none-eabi-addr2line" -f -C \
+            -e Luma3DS/sysmodules/rosalina/rosalina.elf \
+            0x1403E4E8 0x1402B2CC || true
 
       - name: Stage hardware-test package
         run: |
           set -eux
-          mkdir -p artifact/SD_ROOT artifact/SOURCE_PATCHES
+          mkdir -p artifact/SD_ROOT artifact/SOURCE_PATCHES artifact/DEBUG_SYMBOLS
           cp Luma3DS/boot.firm artifact/SD_ROOT/boot.firm
           cp luma_pokebot_bridge/tools/apply_pokebot_menu.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/README.md artifact/
           cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
+          cp Luma3DS/sysmodules/rosalina/rosalina.elf artifact/DEBUG_SYMBOLS/
+          cp Luma3DS/sysmodules/rosalina/build/rosalina.map artifact/DEBUG_SYMBOLS/ || true
+          cp Luma3DS/sysmodules/rosalina/build/rosalina.lst artifact/DEBUG_SYMBOLS/ || true
+          "$DEVKITARM/bin/arm-none-eabi-addr2line" -f -C \
+            -e Luma3DS/sysmodules/rosalina/rosalina.elf \
+            0x1403E4E8 0x1402B2CC > artifact/DEBUG_SYMBOLS/V0P1_CRASH_ADDR2LINE.txt || true
           cat > artifact/FIRST_TEST.txt <<'EOF'
-          Pokebot-Luma v0p1 hardware test
+          Pokebot-Luma v0p2 hardware test
 
-          v0p1 is a foundation build only. It adds the Pokebot3DS Bridge submenu
-          to Rosalina. It does not yet provide RAM networking or controller input.
+          v0p1 crashed inside Rosalina when a Pokebot toggle/Enable Both action
+          refreshed mutable menu labels. v0p2 removes that entire dynamic-title
+          path. Menu labels are constant; toggles only change two booleans.
+
+          v0p2 remains a foundation build only. It does not yet provide RAM
+          networking or controller injection.
 
           IMPORTANT:
-          1. Keep a copy of your current working boot.firm.
+          1. Keep a copy of your current working official-Luma boot.firm.
           2. Replace the SD-card root boot.firm with SD_ROOT/boot.firm.
           3. Boot the 3DS normally.
           4. Confirm HOME Menu controls and touch still work.
           5. Launch ORAS and confirm the game behaves normally.
           6. Open Rosalina with L + Down + Select.
           7. Open "Pokebot3DS Bridge...".
-          8. Confirm RAM Bridge and Input Controller both begin OFF.
-          9. Toggle them ON/OFF and open Status.
-          10. Reboot the console and confirm both are OFF again.
+          8. Select "Enable Both" once.
+          9. Open "Status" and confirm RAM Bridge and Input Controller show ON.
+          10. Go back, select "Disable Both", then Status; both should show OFF.
+          11. Reboot and confirm both begin OFF again.
 
-          If the console does not boot, restore your known-good boot.firm using
-          the SD card. Do not continue to RAM/controller backend work until this
-          menu-only build is confirmed stable.
+          If Rosalina crashes again, press A to save the crash dump, restore the
+          known-good official-Luma boot.firm, and upload the newest dump. The
+          package includes the matching Rosalina ELF/map/list for symbolication.
           EOF
           printf '%s\n' 'Upstream Luma3DS commit: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a' > artifact/SOURCE_PATCHES/UPSTREAM.txt
           sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
@@ -88,6 +107,6 @@ jobs:
       - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot-Luma-v0p1-MenuFoundation
+          name: Pokebot-Luma-v0p2-MenuSafe
           path: artifact/
           if-no-files-found: error
