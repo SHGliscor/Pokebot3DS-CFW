@@ -2,12 +2,6 @@ name: Build Stock-Luma 3GX Bridge
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - stock-luma-plugin-v0p1
-    paths:
-      - 'stock_luma_plugin/**'
-      - '.github/workflows/build-stock-luma-plugin.yml'
   pull_request:
     branches:
       - main
@@ -55,7 +49,6 @@ jobs:
         run: |
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           arm-none-eabi-g++ --version | head -1
-          3gxtool --help >/dev/null 2>&1 || true
           make -C stock_luma_plugin
           test -f stock_luma_plugin/Pokebot3DSBridge.3gx
           ls -lh stock_luma_plugin/Pokebot3DSBridge.3gx
