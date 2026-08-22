@@ -174,7 +174,7 @@ This separation is intentional: **RAM tells the bot what happened; controller/to
 | Treecko / Torchic / Mudkip | ✅ Proven | ✅ Proven |
 | Communication-error `code.ips` | ✅ Hardware proven | ✅ Hardware proven |
 | Whole-game Wild terrain DB | ✅ Proven | ✅ Shared ORAS topology proven |
-| Wild Walk / Run backend | ✅ Hardware proven | ✅ Shared backend enabled |
+| Wild Walk / Run backend | ✅ Hardware proven | ✅ Hardware proven |
 | Acro Bunny backend | ✅ 10/10 proof | ✅ Shared backend enabled |
 
 Omega Ruby completed the finite automated starter reset validation **6/6**, including two successful cycles for each Hoenn starter. The three locked starter modules are shared between the two ORAS profiles rather than duplicated.
@@ -282,6 +282,8 @@ dist/
    ├─ README.md
    ├─ README_EXE.md
    └─ HOW_TO_USE.txt
+```
+
 ---
 
 ## Persistent data
@@ -303,7 +305,7 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - [x] Omega Ruby RAM parity
 - [x] Omega Ruby Hoenn starter one-shots
 - [x] Omega Ruby finite starter reset cycle 6/6
-- [x] OR + AS `code.ips` reset-route patches, this removed the annoying communication error screen when using InputReirection with ORAS
+- [x] OR + AS `code.ips` reset-route patches, this removed the annoying communication error screen when using InputRedirection with ORAS
 - [x] Wild PK6 authority
 - [x] automatic Run after validated non-shiny
 - [x] Walk/Run finite Wild proof
@@ -370,11 +372,11 @@ Omega Ruby has now completed an automated **5/5 finite Wild Run proof** using th
 - zero touch-timeout recoveries during the proof
 - shiny or invalid authority still causes an **absolute HOLD**
 
-This newer proof advances Omega Ruby beyond the earlier **“Shared backend enabled”** wording in the validation table above. The proven Run behaviour is now treated as a frozen working path rather than something to optimise unnecessarily.
+This newer proof advances Omega Ruby beyond the earlier **“Shared backend enabled”** wording in older validation notes. The proven Run behaviour is now treated as a frozen working path rather than something to optimise unnecessarily.
 
 The normal Dashboard Wild hunt is **unlimited** and continues until the user stops it, a shiny is found, or a safety condition causes a HOLD. The separate 5-encounter launcher remains a finite diagnostic/proof tool.
 
-Early real-hardware testing has also successfully triggered and handled Wild encounters in additional grass areas beyond the original Route 101 proof area. Broader map-by-map coverage is still being accumulated rather than assumed complete.
+Early real-hardware testing has also successfully triggered and handled Wild encounters in several additional grass areas beyond the original Route 101 proof area, including tests that did not require a route-specific grass database entry for each location. Broader map-by-map coverage is still being accumulated rather than assumed complete.
 
 ### Random Hoenn starters
 
@@ -387,6 +389,25 @@ On every reset the orchestration layer independently chooses one of:
 - Mudkip
 
 The random chooser only selects which locked starter module runs. It does **not** replace or rewrite the proven Treecko/Torchic/Mudkip selection logic, and the individual per-starter ledgers remain authoritative.
+
+During hardware testing an orchestration regression caused Random mode to select Treecko and Torchic while omitting Mudkip, even though direct Mudkip selection still worked. That Random-mode regression has now been fixed and the current build can dispatch all three Hoenn starters through Random mode.
+
+### Long-run starter and input validation
+
+The custom `boot.firm` input path has now been exercised in longer real-hardware starter runs rather than only short finite proofs.
+
+- one run completed **415 resets in a little over four hours** after moving to the new input path
+- no stuck/held-input failure was observed during that run
+- the same acknowledged input bridge handles buttons, directional input and native touchscreen pulses
+- starter shiny authority remains RAM-based; the input bridge only performs normal gameplay controls
+
+Torchic has also been observed at roughly **35–36 seconds per reset**, or around **100 resets/hour**, on the current hardware/setup. This is an observed development benchmark rather than a guaranteed rate on every network or 3DS.
+
+### Wild escape path is intentionally being left alone
+
+Once a Wild encounter has a validated non-shiny RAM result, the current Run flow exits the battle very quickly. In current testing it commonly uses roughly **12–13 touchscreen pulses** through the battle escape sequence.
+
+Because that path is already reliable and transitions out of battle almost immediately, it is being treated as a frozen working behaviour rather than being shortened purely for timing. Reliability takes priority over shaving a small number of inputs from an already-working escape path.
 
 ### STATS is now analytics/history focused
 
