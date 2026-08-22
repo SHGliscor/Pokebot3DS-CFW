@@ -59,8 +59,9 @@ jobs:
           python3 stock_luma_plugin/tools/apply_game_hid_memory_fix.py
           python3 stock_luma_plugin/tools/apply_hid_diagnostic_overlay.py
           python3 stock_luma_plugin/tools/apply_hid_map_locator.py
-          sed -i 's/Pokebot Bridge v0p2/Pokebot Bridge v0p8/' stock_luma_plugin/Sources/BridgeOverlay.hpp
-          grep -q 'Pokebot Bridge v0p8' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          python3 stock_luma_plugin/tools/apply_hid_region_locator.py
+          sed -i 's/Pokebot Bridge v0p2/Pokebot Bridge v0p9/' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'Pokebot Bridge v0p9' stock_luma_plugin/Sources/BridgeOverlay.hpp
           grep -q 'BridgeOverlay::RecordPacket' stock_luma_plugin/Sources/Main.cpp
           grep -q 'srvInit()' stock_luma_plugin/Sources/Main.cpp
           grep -q 'kSocBufferAddress = 0x07500000u' stock_luma_plugin/Sources/Main.cpp
@@ -68,12 +69,13 @@ jobs:
           grep -q 'svcControlMemoryUnsafe' stock_luma_plugin/Sources/Main.cpp
           grep -q 'local.sin_addr.s_addr = gethostid()' stock_luma_plugin/Sources/Main.cpp
           grep -q 'settings.UseGameHidMemory = true' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'gPokebotSharedMapCount' stock_luma_plugin/Sources/BridgeOverlay.hpp
-          grep -q 'HID LOCATOR Maps:%lu' stock_luma_plugin/Sources/BridgeOverlay.hpp
-          grep -q 'Seen:%03lX' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'HID REGION Candidates:%lu' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'MEMSTATE_SHARED' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'MEMSTATE_ALIASED' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'MEMSTATE_ALIAS' stock_luma_plugin/Sources/BridgeOverlay.hpp
           ! grep -q 'Controller::InjectKey(keys)' stock_luma_plugin/Sources/Main.cpp
           ! grep -q 'SO_RCVTIMEO' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'Pokebot3DS-3GX-v0p8' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'Pokebot3DS-3GX-v0p9' stock_luma_plugin/Sources/Main.cpp
           make -C stock_luma_plugin \
             CTRPFLIB=/tmp/ctrpf/Library \
             CTRPFHEADERS=/tmp/ctrpf/Library/include
@@ -85,6 +87,6 @@ jobs:
       - name: Upload plugin
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot3DSBridge-v0p8-HidLocator
+          name: Pokebot3DSBridge-v0p9-HidRegionLocator
           path: stock_luma_plugin/Pokebot3DSBridge.3gx
           if-no-files-found: error
