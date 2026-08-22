@@ -8,6 +8,12 @@ on:
     paths:
       - 'stock_luma_plugin/**'
       - '.github/workflows/build-stock-luma-plugin.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'stock_luma_plugin/**'
+      - '.github/workflows/build-stock-luma-plugin.yml'
 
 jobs:
   build:
