@@ -87,7 +87,7 @@ Menu pokebotBridgeMenu = {
 };
 '''
 
-text = text.replace(include_marker, include_marker + block, 1)
+text = text.replace(include_marker, '#include <stdio.h>\n' + include_marker + block, 1)
 marker = '        { "Miscellaneous options...", MENU, .menu = &miscellaneousMenu },\n'
 if marker not in text:
     raise SystemExit("menu marker not found")
