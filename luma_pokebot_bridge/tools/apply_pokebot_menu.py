@@ -4,7 +4,7 @@ root = Path(__file__).resolve().parents[2] / "Luma3DS"
 menus_path = root / "sysmodules" / "rosalina" / "source" / "menus.c"
 text = menus_path.read_text(encoding="utf-8")
 
-if "Pokebot-Luma v0p3" in text:
+if "Pokebot-Luma v0p4" in text:
     raise SystemExit(0)
 
 include_marker = '#include "luma_config.h"\n'
@@ -13,9 +13,10 @@ if include_marker not in text:
 
 block = r'''
 #include "input_redirection.h"
+#include "pokebot_ram_bridge.h"
 
-static bool sPokebotRamEnabled = false;
 static Result sPokebotInputResult = 0;
+static Result sPokebotRamResult = 0;
 
 static Result PokebotBridge_SetInputEnabled(bool enable)
 {
@@ -73,7 +74,10 @@ static Result PokebotBridge_SetInputEnabled(bool enable)
 
 static void PokebotBridge_ToggleRam(void)
 {
-    sPokebotRamEnabled = !sPokebotRamEnabled;
+    if (pokebotRamBridgeEnabled)
+        sPokebotRamResult = PokebotRamBridge_Disable(5 * 1000 * 1000 * 1000LL);
+    else
+        sPokebotRamResult = PokebotRamBridge_Start();
 }
 
 static void PokebotBridge_ToggleInput(void)
@@ -83,16 +87,18 @@ static void PokebotBridge_ToggleInput(void)
 
 static void PokebotBridge_EnableBoth(void)
 {
-    sPokebotRamEnabled = true;
+    if (!pokebotRamBridgeEnabled)
+        sPokebotRamResult = PokebotRamBridge_Start();
     if (!inputRedirectionEnabled)
         sPokebotInputResult = PokebotBridge_SetInputEnabled(true);
 }
 
 static void PokebotBridge_DisableBoth(void)
 {
+    if (pokebotRamBridgeEnabled)
+        sPokebotRamResult = PokebotRamBridge_Disable(5 * 1000 * 1000 * 1000LL);
     if (inputRedirectionEnabled)
         sPokebotInputResult = PokebotBridge_SetInputEnabled(false);
-    sPokebotRamEnabled = false;
 }
 
 static void PokebotBridge_ShowStatus(void)
@@ -108,12 +114,24 @@ static void PokebotBridge_ShowStatus(void)
         Draw_DrawString(10, 10, COLOR_TITLE, "Pokebot3DS Bridge");
         u32 posY = 30;
         posY = Draw_DrawFormattedString(10, posY, COLOR_WHITE,
-            "Pokebot-Luma v0p3\n\nRAM Bridge:       %s\nInput Controller: %s\nInput result:     0x%08lx\nUDP input port:   4950\n\n",
-            sPokebotRamEnabled ? "ON" : "OFF",
+            "Pokebot-Luma v0p4\n\n"
+            "RAM Bridge:       %s\n"
+            "RAM result:       0x%08lx\n"
+            "RAM UDP:          4952\n"
+            "Packets / Reads:  %lu / %lu\n\n"
+            "Input Controller: %s\n"
+            "Input result:     0x%08lx\n"
+            "Input UDP:        4950\n\n",
+            pokebotRamBridgeEnabled ? "ON" : "OFF",
+            (u32)sPokebotRamResult,
+            pokebotRamBridgePackets,
+            pokebotRamBridgeReads,
             inputRedirectionEnabled ? "ON" : "OFF",
             (u32)sPokebotInputResult);
         Draw_DrawString(10, posY, COLOR_WHITE,
-            "Additive HID proof build.\nPhysical buttons must remain usable.\nRAM is still state-only in v0p3.\n\nPress B to go back.");
+            "RAM: read-only QUERY/READ, max 0x200.\n"
+            "Controller: v0p3 additive path unchanged.\n\n"
+            "Press B to go back.");
         Draw_FlushFramebuffer();
         Draw_Unlock();
     }
