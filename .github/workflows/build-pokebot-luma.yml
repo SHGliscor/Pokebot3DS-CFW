@@ -59,7 +59,7 @@ jobs:
           cp Luma3DS/boot.firm artifact/SD_ROOT/boot.firm
           cp luma_pokebot_bridge/tools/apply_pokebot_menu.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/README.md artifact/
-          cp Luma3DS/LICENSE.txt artifact/LUMA3DS_LICENSE.txt
+          cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
           cat > artifact/FIRST_TEST.txt <<'EOF'
           Pokebot-Luma v0p1 hardware test
 
