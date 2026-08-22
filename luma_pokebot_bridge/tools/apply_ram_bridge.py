@@ -34,7 +34,7 @@ source = r'''/*
  * Pokebot3DS read-only RAM bridge for Pokebot-Luma v0p4.
  *
  * Protocol compatibility target: the previously proven Pokebot bridge
- * request/response framing used by the Nexus/3GX prototypes.
+ * request/response framing used by the earlier Pokebot bridge prototypes.
  *
  * Security/safety invariant: QUERY and bounded READ only. There is no RAM
  * write command in this module.
