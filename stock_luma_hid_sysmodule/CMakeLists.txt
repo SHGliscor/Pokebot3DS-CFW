@@ -7,6 +7,7 @@ set(SYSMODULE_TARGET "pokebot-hid-sys")
 
 add_executable(${SYSMODULE_TARGET}
     source/main.c
+    source/base_heap.c
 )
 
 target_compile_features(${SYSMODULE_TARGET} PRIVATE c_std_11)
