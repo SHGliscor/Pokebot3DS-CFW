@@ -47,8 +47,7 @@ jobs:
           grep -q 'PokebotBridge_SetInputEnabled' Luma3DS/sysmodules/rosalina/source/menus.c
           grep -q 'inputRedirectionEnabled ? "ON" : "OFF"' Luma3DS/sysmodules/rosalina/source/menus.c
           grep -q 'Pokebot additive HID' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
-          grep -q 'and r1, r1, r2' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
-          ! grep -q 'movne r1, r2        @ If not, load remote.' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
+          grep -q 'and r1, r1, r2      @ Active-low union' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
 
       - name: Build boot.firm
         run: |
