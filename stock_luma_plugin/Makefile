@@ -51,6 +51,9 @@ all: $(TARGET).3gx
 $(TARGET).3gx: $(BUILD)
 
 $(BUILD):
+	@echo "CTRPFLIB=$(CTRPFLIB)"
+	@echo "INCLUDE=$(INCLUDE)"
+	@find $(CTRPFLIB)/include -maxdepth 4 -name types.h -print || true
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(TOPDIR)/Makefile
 
