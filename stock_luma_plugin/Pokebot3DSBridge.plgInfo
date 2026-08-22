@@ -2,7 +2,7 @@ Author: SHGliscor / Pokebot3DS-CFW
 
 Version:
     Major: 0
-    Minor: 1
+    Minor: 2
     Revision: 0
 
 Targets:
@@ -11,8 +11,9 @@ Targets:
 
 Title: Pokebot3DS Bridge
 
-Summary: Stock-Luma ORAS RAM/input bridge proof
+Summary: Stock-Luma ORAS RAM/input bridge with live status overlay
 
 Description: |
   Experimental Pokebot3DS-CFW bridge for Pokemon Omega Ruby and Alpha Sapphire.
   Exposes UDP 4952 read-only RAM and acknowledged additive input without replacing Luma3DS.
+  Includes an always-visible hardware-proof overlay for PC, RAM and simulated input state.
