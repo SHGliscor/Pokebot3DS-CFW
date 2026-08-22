@@ -8,6 +8,7 @@ export TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
 CTRPFLIB ?= $(DEVKITPRO)/libctrpf
+CTRPFHEADERS ?= $(CTRPFLIB)/include
 TARGET   := Pokebot3DSBridge
 BUILD    := build
 SOURCES  := Sources
@@ -38,8 +39,9 @@ SFILES   := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 export LD       := $(CXX)
 export OFILES   := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
 export INCLUDE  := $(foreach dir,$(INCLUDES),-I$(TOPDIR)/$(dir)) \
+                   -I$(CTRPFHEADERS) \
+                   -I$(CTRPFHEADERS)/CTRPluginFramework \
                    -I$(CTRPFLIB)/include \
-                   -I$(CTRPFLIB)/include/CTRPluginFramework \
                    $(foreach dir,$(CTRULIB) $(PORTLIBS),-I$(dir)/include) \
                    -I$(TOPDIR)/$(BUILD)
 export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
@@ -51,9 +53,6 @@ all: $(TARGET).3gx
 $(TARGET).3gx: $(BUILD)
 
 $(BUILD):
-	@echo "CTRPFLIB=$(CTRPFLIB)"
-	@echo "INCLUDE=$(INCLUDE)"
-	@find $(CTRPFLIB)/include -maxdepth 4 -name types.h -print || true
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(TOPDIR)/Makefile
 
