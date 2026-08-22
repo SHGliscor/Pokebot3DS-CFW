@@ -21,7 +21,7 @@ jobs:
       - name: Install host build prerequisites
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends cmake g++ make git ca-certificates
+          apt-get install -y --no-install-recommends cmake g++ make git ca-certificates python3
 
       - name: Build and install 3gxtool 1.3
         run: |
@@ -52,6 +52,9 @@ jobs:
           # The bridge already closes/shuts down the UDP socket during Stop(),
           # so remove only this host-specific timeout setup for the hardware proof.
           sed -i '/timeval timeout{}/,+2d' stock_luma_plugin/Sources/Main.cpp
+          python3 stock_luma_plugin/tools/apply_status_overlay.py
+          grep -q 'Pokebot Bridge v0p2' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'BridgeOverlay::RecordPacket' stock_luma_plugin/Sources/Main.cpp
           make -C stock_luma_plugin \
             CTRPFLIB=/tmp/ctrpf/Library \
             CTRPFHEADERS=/tmp/ctrpf/Library/include
@@ -63,6 +66,6 @@ jobs:
       - name: Upload plugin
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot3DSBridge-v0p1
+          name: Pokebot3DSBridge-v0p2-StatusOverlay
           path: stock_luma_plugin/Pokebot3DSBridge.3gx
           if-no-files-found: error
