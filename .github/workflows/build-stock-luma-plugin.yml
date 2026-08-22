@@ -43,6 +43,7 @@ jobs:
           make -C /tmp/ctrpf/Library lib/libctrpf.a
           test -f /tmp/ctrpf/Library/lib/libctrpf.a
           test -f /tmp/ctrpf/Library/include/types.h
+          "$DEVKITARM/bin/arm-none-eabi-nm" /tmp/ctrpf/Library/lib/libctrpf.a | grep -q ' svcControlMemoryUnsafe$'
 
       - name: Build Pokebot3DS plugin
         run: |
@@ -57,7 +58,6 @@ jobs:
           grep -q 'kSocBufferAddress = 0x07500000u' stock_luma_plugin/Sources/Main.cpp
           grep -q 'kSocBufferSize = 0x20000' stock_luma_plugin/Sources/Main.cpp
           grep -q 'svcControlMemoryUnsafe' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'svc 0xA3' stock_luma_plugin/Sources/pokebot_csvc.s
           grep -q 'local.sin_addr.s_addr = gethostid()' stock_luma_plugin/Sources/Main.cpp
           ! grep -q 'SO_RCVTIMEO' stock_luma_plugin/Sources/Main.cpp
           grep -q 'Pokebot3DS-3GX-v0p4' stock_luma_plugin/Sources/Main.cpp
