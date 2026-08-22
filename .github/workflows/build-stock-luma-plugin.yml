@@ -1,0 +1,61 @@
+name: Build Stock-Luma 3GX Bridge
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'stock_luma_plugin/**'
+      - '.github/workflows/build-stock-luma-plugin.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl wget git make python3 xz-utils bzip2
+
+      - name: Install devkitPro pacman
+        run: |
+          tmpdir="$(mktemp -d)"
+          cat > "$tmpdir/wgetrc" <<'EOF'
+          user_agent = Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36
+          EOF
+          export WGETRC="$tmpdir/wgetrc"
+          wget -O "$tmpdir/install-devkitpro-pacman" https://apt.devkitpro.org/install-devkitpro-pacman
+          chmod +x "$tmpdir/install-devkitpro-pacman"
+          sudo env WGETRC="$tmpdir/wgetrc" "$tmpdir/install-devkitpro-pacman"
+
+      - name: Install 3DS toolchain and CTRPluginFramework
+        run: |
+          sudo dkp-pacman -Sy --noconfirm
+          sudo dkp-pacman -S --needed --noconfirm 3ds-dev
+          conf=/opt/devkitpro/pacman/etc/pacman.conf
+          printf '\n[thepixellizeross-lib]\nServer = https://thepixellizeross.gitlab.io/packages/any\nSigLevel = Optional\n' | sudo tee -a "$conf" >/dev/null
+          printf '\n[thepixellizeross-linux]\nServer = https://thepixellizeross.gitlab.io/packages/x86_64/linux\nSigLevel = Optional\n' | sudo tee -a "$conf" >/dev/null
+          sudo dkp-pacman -Sy --noconfirm
+          sudo dkp-pacman -S --needed --noconfirm libctrpf 3gxtool
+
+      - name: Build plugin
+        env:
+          DEVKITPRO: /opt/devkitpro
+          DEVKITARM: /opt/devkitpro/devkitARM
+        run: |
+          export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
+          arm-none-eabi-g++ --version | head -1
+          make -C stock_luma_plugin
+          test -f stock_luma_plugin/Pokebot3DSBridge.3gx
+          ls -lh stock_luma_plugin/Pokebot3DSBridge.3gx
+
+      - name: Upload plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokebot3DSBridge-v0p1
+          path: stock_luma_plugin/Pokebot3DSBridge.3gx
+          if-no-files-found: error
