@@ -39,6 +39,7 @@ jobs:
           set -eux
           git clone https://github.com/Tekito-256/CTRPluginFramework.git /tmp/ctrpf
           git -C /tmp/ctrpf checkout 1f2e34c9d4289873a6601cb5a4631d991a0fdf36
+          sed -i 's/-Wall -Werror /-Wall /' /tmp/ctrpf/Library/Makefile
           make -C /tmp/ctrpf/Library lib/libctrpf.a
           test -f /tmp/ctrpf/Library/lib/libctrpf.a
           test -f /tmp/ctrpf/Library/include/types.h
