@@ -42,12 +42,14 @@ jobs:
         run: |
           set -eux
           python3 luma_pokebot_bridge/tools/apply_ram_bridge.py
+          python3 luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py
           python3 luma_pokebot_bridge/tools/apply_pokebot_menu.py
           python3 luma_pokebot_bridge/tools/apply_additive_input_redirection.py
           grep -q 'Pokebot-Luma v0p4' Luma3DS/sysmodules/rosalina/source/menus.c
           grep -q 'PokebotRamBridge_Start' Luma3DS/sysmodules/rosalina/source/menus.c
           grep -q 'POKEBOT_RAM_PORT       4952' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q '#include "sock_util.h"' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_CMD_READ      = 4' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           ! grep -q 'WriteTarget' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
@@ -70,6 +72,7 @@ jobs:
           cp luma_pokebot_bridge/tools/apply_pokebot_menu.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/tools/apply_additive_input_redirection.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/tools/apply_ram_bridge.py artifact/SOURCE_PATCHES/
+          cp luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/tools/test_pokebot_luma_input.py artifact/PC_TEST/
           cp luma_pokebot_bridge/tools/test_pokebot_luma_ram.py artifact/PC_TEST/
           cp luma_pokebot_bridge/README.md artifact/
