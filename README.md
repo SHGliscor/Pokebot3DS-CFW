@@ -33,6 +33,45 @@
   <img src="https://img.shields.io/badge/Acro%20Bunny-10%2F10%20PASS-16a34a?style=flat-square" alt="Acro Bunny 10/10 PASS">
 </p>
 
+---
+
+## ORAS development progress
+
+These percentages are **development estimates, not automated code coverage**. They are intended to make the current state of the project easy to understand. The overall ORAS figure is the simple average of the 18 sections below, so no hidden weighting is being used.
+
+### Overall ORAS roadmap
+
+**70%**
+
+```text
+██████████████░░░░░░ 70%
+```
+
+| ORAS section | Progress | Current status |
+|---|---|---|
+| CFW / RAM / input bridge | `████████████████████` **100%** | Read-only RAM + acknowledged HID/touch bridge hardware-proven |
+| Hoenn starter automation | `████████████████████` **100%** | Treecko, Torchic, Mudkip + Random mode operational |
+| Grass Wild automation | `███████████████████░` **95%** | RAM-authoritative encounter loop, terrain containment and automatic Run proven; wider coverage continues |
+| Horde automation | `████████████████░░░░` **80%** | Natural and Sweet Scent Horde work implemented/hardware-tested in Alpha Sapphire; wider OR parity remains |
+| Cave automation | `████████████████░░░░` **80%** | Cave hunting with Walk/Run/Acro Bunny hardware-tested in Alpha Sapphire; wider OR parity remains |
+| Surf / Ocean automation | `████████████████░░░░` **80%** | Surf/Ocean hunting path implemented and hardware-tested in development; wider OR parity remains |
+| Encounter / terrain DB + browser | `███████████████████░` **95%** | Whole-game ORAS encounter/terrain data and HUNTS browser are live; edge-case coverage continues |
+| Dashboard / HUNTS | `██████████████████░░` **90%** | Main hunting workflow and encounter browser are live |
+| STATS / history | `█████████████████░░░` **85%** | Persistent encounters, phase/lifetime analytics, extrema and history implemented; polish remains |
+| TOOLS / support | `███████████████░░░░░` **75%** | Diagnostics/support design and support ZIP workflow implemented; some utilities remain unfinished |
+| Discord notifications / Rich Presence | `████████████████░░░░` **80%** | Discord bot notifications and Rich Presence work implemented; further event/media wiring remains |
+| Direct 3DS screenshot pipeline | `██████████████░░░░░░` **70%** | Direct top-screen framebuffer capture to PC image pipeline built; final Discord shiny-image attachment wiring remains |
+| Block list | `████████████████░░░░` **80%** | Block-list feature is present; further documentation/polish remains |
+| Fishing | `████░░░░░░░░░░░░░░░░` **20%** | Encounter data/browser support exists; production automation remains |
+| Static encounters | `██░░░░░░░░░░░░░░░░░░` **10%** | Planned after the currently proven starter/Wild foundations |
+| Postgame starters | `███░░░░░░░░░░░░░░░░░` **15%** | Johto/Unova/Sinnoh starters are in the browser; automation is not yet wired |
+| Language validation | `███░░░░░░░░░░░░░░░░░` **15%** | English hardware-verified; other game languages remain unverified |
+| Release / docs | `██████████████████░░` **90%** | README/setup/release structure largely complete; documentation follows development |
+
+The percentages should move only when a section gains real implementation, hardware proof, production integration or required parity—not simply because code was written.
+
+---
+
 ### Inspiration
 
 Pokebot3DS-CFW takes inspiration from excellent Pokémon automation projects including:
@@ -176,6 +215,13 @@ This separation is intentional: **RAM tells the bot what happened; controller/to
 | Whole-game Wild terrain DB | ✅ Proven | ✅ Shared ORAS topology proven |
 | Wild Walk / Run backend | ✅ Hardware proven | ✅ Hardware proven |
 | Acro Bunny backend | ✅ 10/10 proof | ✅ Shared backend enabled |
+| Natural Hordes | ✅ Hardware-tested | ⚪ OR-specific proof pending |
+| Sweet Scent Hordes | ✅ Hardware-tested | ⚪ OR-specific proof pending |
+| Cave Walk / Run / Acro Bunny | ✅ Hardware-tested | ⚪ OR-specific proof pending |
+| Surf / Ocean | ✅ Hardware-tested | ⚪ OR-specific proof pending |
+| Discord notifications / Rich Presence | ✅ Implemented | ✅ Shared PC feature |
+| Direct top-screen framebuffer capture | 🟡 PC image pipeline built | 🟡 Shared pipeline; Discord attachment still pending |
+| Block list | ✅ Implemented | ✅ Shared PC feature |
 
 Omega Ruby completed the finite automated starter reset validation **6/6**, including two successful cycles for each Hoenn starter. The three locked starter modules are shared between the two ORAS profiles rather than duplicated.
 
@@ -305,14 +351,31 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - [x] Omega Ruby RAM parity
 - [x] Omega Ruby Hoenn starter one-shots
 - [x] Omega Ruby finite starter reset cycle 6/6
-- [x] OR + AS `code.ips` reset-route patches, this removed the annoying communication error screen when using InputRedirection with ORAS
+- [x] Random Hoenn starter mode
+- [x] OR + AS `code.ips` reset-route patches
+- [x] acknowledged UDP 4952 input controller
+- [x] native acknowledged touchscreen input
 - [x] Wild PK6 authority
 - [x] automatic Run after validated non-shiny
 - [x] Walk/Run finite Wild proof
 - [x] Acro Bunny finite Wild proof
+- [x] 30/30 complete W6 causal Wild baseline
+- [x] unlimited Dashboard Wild mode
 - [x] whole-game terrain database
 - [x] ORAS automatic game profiles
 - [x] encounter browser
+- [x] Alpha Sapphire Horde development path
+- [x] Alpha Sapphire Sweet Scent Horde development path
+- [x] Alpha Sapphire Cave Walk/Run/Acro development path
+- [x] Alpha Sapphire Surf/Ocean development path
+- [x] Discord notification integration
+- [x] Discord Rich Presence integration
+- [x] direct 3DS top-screen framebuffer-to-PC image pipeline
+- [x] block-list feature
+- [x] persistent stats/history and shiny phase tracking
+- [x] support ZIP export
+- [ ] attach direct 3DS screenshot to Discord shiny notification
+- [ ] Omega Ruby-specific Horde/Cave/Surf hardware parity
 - [ ] Johto postgame starter automation
 - [ ] Unova postgame starter automation
 - [ ] Sinnoh postgame starter automation
@@ -340,11 +403,11 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - ✅ Windows Qt dashboard
 
 ### Not claimed yet
-- ❌ emulator support wont ever be supported by myself i dont have the means to port it to emulator 
+- ❌ emulator support wont ever be supported by myself i dont have the means to port it to emulator
 - ❌ non-English game languages
 - ❌ postgame Johto/Unova/Sinnoh starter automation
 - ❌ production static hunts
-- ❌ production Surf/Fishing
+- ❌ production Fishing
 - ❌ XY / Gen 7 production support
 
 ---
@@ -374,9 +437,57 @@ Omega Ruby has now completed an automated **5/5 finite Wild Run proof** using th
 
 This newer proof advances Omega Ruby beyond the earlier **“Shared backend enabled”** wording in older validation notes. The proven Run behaviour is now treated as a frozen working path rather than something to optimise unnecessarily.
 
-The normal Dashboard Wild hunt is **unlimited** and continues until the user stops it, a shiny is found, or a safety condition causes a HOLD. The separate 5-encounter launcher remains a finite diagnostic/proof tool.
+The normal Dashboard Wild hunt is **unlimited** and continues until the user stops it, a shiny is found, or a safety condition causes a HOLD. The separate finite launcher remains a diagnostic/proof tool.
 
 Early real-hardware testing has also successfully triggered and handled Wild encounters in several additional grass areas beyond the original Route 101 proof area, including tests that did not require a route-specific grass database entry for each location. Broader map-by-map coverage is still being accumulated rather than assumed complete.
+
+### Wild causal baseline and terrain-aware movement
+
+The Alpha Sapphire Wild path reached a **30/30 complete W6 causal baseline** before being promoted into the normal unlimited Dashboard hunt.
+
+The Wild engine uses:
+
+- bounded terrain-aware movement
+- authoritative player/zone coordinates from RAM
+- encounter-terrain containment
+- one authoritative PK6 logical read per encounter
+- checksum/species/TID-SID validation
+- RAM shiny decision
+- absolute HOLD on shiny or invalid state
+- native acknowledged touchscreen Run input
+- post-escape field/terrain authority before movement resumes
+
+The proven escape path commonly accepts the Run action after roughly **12–13 native touchscreen pulses**. Because it is already reliable and exits battle quickly, that sequence is intentionally being left alone rather than shortened just for timing.
+
+### Horde encounters
+
+Horde support has progressed beyond simply displaying Horde encounter tables in HUNTS.
+
+Development/hardware testing now includes:
+
+- natural Horde encounter handling
+- RAM inspection of all five Pokémon in a Horde rather than treating the encounter as one Pokémon
+- shiny safety across the Horde slots
+- Sweet Scent-triggered Horde automation
+- continuation only after the Horde has been validated as safe/non-shiny
+
+The currently proven Horde work is on Alpha Sapphire; Omega Ruby-specific Horde parity remains to be validated before it is marked complete for both games.
+
+### Cave hunting
+
+Cave hunting has been implemented and hardware-tested in Alpha Sapphire, including Fiery Path development runs.
+
+The cave path reuses the RAM-authoritative Wild safety model and supports the movement styles that have been proven there, including Walk/Run and Acro Bunny development paths. Cave movement is treated separately from outdoor grass so the bot does not assume every encounter area has the same terrain geometry.
+
+Omega Ruby-specific cave parity is still tracked separately rather than assumed from Alpha Sapphire.
+
+### Surf and Ocean hunting
+
+Surf/Ocean hunting has also moved beyond encounter-browser data and into real automation testing.
+
+The Surf path uses the same fundamental rule as land Wilds: the encounter result comes from validated PK6 RAM, not the screen. Movement/continuation authority is kept separate from the Pokémon shiny decision so an unexpected water/field state cannot authorise blind movement.
+
+Alpha Sapphire Surf/Ocean development has been hardware-tested; broader production coverage and Omega Ruby-specific parity remain open work.
 
 ### Random Hoenn starters
 
@@ -403,11 +514,30 @@ The custom `boot.firm` input path has now been exercised in longer real-hardware
 
 Torchic has also been observed at roughly **35–36 seconds per reset**, or around **100 resets/hour**, on the current hardware/setup. This is an observed development benchmark rather than a guaranteed rate on every network or 3DS.
 
-### Wild escape path is intentionally being left alone
+### Discord integration
 
-Once a Wild encounter has a validated non-shiny RAM result, the current Run flow exits the battle very quickly. In current testing it commonly uses roughly **12–13 touchscreen pulses** through the battle escape sequence.
+Discord support is now part of the desktop-bot work rather than a future concept.
 
-Because that path is already reliable and transitions out of battle almost immediately, it is being treated as a frozen working behaviour rather than being shortened purely for timing. Reliability takes priority over shaving a small number of inputs from an already-working escape path.
+Current Discord development includes:
+
+- bot-account based notifications
+- hunt/status information suitable for remote monitoring
+- Discord Rich Presence work for current hunt/status/elapsed visibility
+- shiny/event notification plumbing
+
+Discord is not used as hunt authority. A Discord failure cannot decide whether a Pokémon is shiny or authorize a reset; RAM safety remains independent.
+
+### Direct 3DS screenshot pipeline
+
+A direct screenshot path is being built so shiny notifications do not have to depend on an external capture card.
+
+The current pipeline can work from the 3DS top-screen framebuffer, transfer the image data through bounded/verified chunks, reconstruct the **400×240** top-screen image on the PC, and encode it as a normal image file. This is deliberately separate from shiny authority: the screenshot is evidence/presentation only.
+
+The remaining step is to wire that direct 3DS image into the final Discord shiny notification attachment path. Until that wiring is hardware-proven, the README does **not** claim that Discord screenshot delivery itself is complete.
+
+### Block list
+
+The bot also contains a **block-list** feature. It is tracked separately from the RAM shiny decision and is part of the user-control/safety layer. The README records the feature as implemented without inventing undocumented behaviour that has not yet been recovered from the current packaged build.
 
 ### STATS is now analytics/history focused
 
