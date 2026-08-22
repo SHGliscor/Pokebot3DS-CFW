@@ -26,11 +26,10 @@
   <img src="https://img.shields.io/badge/Games-Omega%20Ruby%20%2B%20Alpha%20Sapphire-2563eb?style=flat-square" alt="Omega Ruby and Alpha Sapphire">
   <img src="https://img.shields.io/badge/Language-English%20Verified-16a34a?style=flat-square" alt="English verified">
   <img src="https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows11&logoColor=white&style=flat-square" alt="Windows">
-  <img src="https://img.shields.io/badge/CFW-Nexus3DS-7c3aed?style=flat-square" alt="Nexus3DS CFW">
+  <img src="https://img.shields.io/badge/CFW-Pokebot--Luma%20%2F%20Luma3DS-7c3aed?style=flat-square" alt="Pokebot-Luma / Luma3DS">
   <img src="https://img.shields.io/badge/RAM%20Authority-PK6-0891b2?style=flat-square" alt="RAM authority">
-  <img src="https://img.shields.io/badge/OR%20Starter%20Reset-6%2F6%20PASS-16a34a?style=flat-square" alt="Omega Ruby starter reset 6/6 PASS">
-  <img src="https://img.shields.io/badge/Wild%20Walk%20%2F%20Run-Hardware%20Proven-16a34a?style=flat-square" alt="Wild Walk Run hardware proven">
-  <img src="https://img.shields.io/badge/Acro%20Bunny-10%2F10%20PASS-16a34a?style=flat-square" alt="Acro Bunny 10/10 PASS">
+  <img src="https://img.shields.io/badge/Luma%20RAM%20Bridge-Hardware%20Proven-16a34a?style=flat-square" alt="Luma RAM bridge hardware proven">
+  <img src="https://img.shields.io/badge/Additive%20Input-Hardware%20Proven-16a34a?style=flat-square" alt="Additive input hardware proven">
 </p>
 
 ---
@@ -49,9 +48,9 @@ These percentages are **development estimates, not automated code coverage**. Th
 
 | ORAS section | Progress | Current status |
 |---|---|---|
-| CFW / RAM / input bridge | `████████████████████` **100%** | Read-only RAM + acknowledged HID/touch bridge hardware-proven |
+| CFW / RAM / input bridge | `████████████████████` **100%** | Pokebot-Luma read-only RAM bridge + additive Luma input path hardware-proven |
 | Hoenn starter automation | `████████████████████` **100%** | Treecko, Torchic, Mudkip + Random mode operational |
-| Grass Wild automation | `███████████████████░` **95%** | RAM-authoritative encounter loop, terrain containment and automatic Run proven; wider coverage continues |
+| Grass Wild automation | `███████████████████░` **95%** | RAM-authoritative encounter loop, terrain containment and automatic Run proven; integrated Luma regression testing continues |
 | Horde automation | `████████████████░░░░` **80%** | Natural and Sweet Scent Horde work implemented/hardware-tested in Alpha Sapphire; wider OR parity remains |
 | Cave automation | `████████████████░░░░` **80%** | Cave hunting with Walk/Run/Acro Bunny hardware-tested in Alpha Sapphire; wider OR parity remains |
 | Surf / Ocean automation | `████████████████░░░░` **80%** | Surf/Ocean hunting path implemented and hardware-tested in development; wider OR parity remains |
@@ -60,7 +59,7 @@ These percentages are **development estimates, not automated code coverage**. Th
 | STATS / history | `█████████████████░░░` **85%** | Persistent encounters, phase/lifetime analytics, extrema and history implemented; polish remains |
 | TOOLS / support | `███████████████░░░░░` **75%** | Diagnostics/support design and support ZIP workflow implemented; some utilities remain unfinished |
 | Discord notifications / Rich Presence | `████████████████░░░░` **80%** | Discord bot notifications and Rich Presence work implemented; further event/media wiring remains |
-| Direct 3DS screenshot pipeline | `██████████████░░░░░░` **70%** | Direct top-screen framebuffer capture to PC image pipeline built; final Discord shiny-image attachment wiring remains |
+| Direct 3DS screenshot pipeline | `██████████░░░░░░░░░░` **50%** | PC image pipeline exists; direct framebuffer transport is not yet implemented in Pokebot-Luma v0p4 |
 | Block list | `████████████████░░░░` **80%** | Block-list feature is present; further documentation/polish remains |
 | Fishing | `████░░░░░░░░░░░░░░░░` **20%** | Encounter data/browser support exists; production automation remains |
 | Static encounters | `██░░░░░░░░░░░░░░░░░░` **10%** | Planned after the currently proven starter/Wild foundations |
@@ -80,7 +79,7 @@ Pokebot3DS-CFW takes inspiration from excellent Pokémon automation projects inc
 - [pokebot-gen3](https://github.com/40cakes/pokebot-gen3)
 - [PokemonAutomation](https://github.com/PokemonAutomation)
 
-Pokebot3DS-CFW is an independent implementation built around RAM-authoritative Gen 6 shiny hunting, acknowledged 3DS input and real-hardware safety gates.
+Pokebot3DS-CFW is an independent implementation built around RAM-authoritative Gen 6 shiny hunting, 3DS input automation and real-hardware safety gates.
 
 ---
 
@@ -113,11 +112,94 @@ Thank you to everyone who tests the bot, reports bugs, provides feedback, or sim
 >
 > English is the currently hardware-verified game language. Other languages remain unverified until separately tested.
 
-Pokebot3DS-CFW is a Windows Qt application paired with a customised Nexus3DS-based `boot.firm`. The firmware exposes a small read-only RAM bridge and an acknowledged HID/touch input bridge on UDP `4952`.
+Pokebot3DS-CFW is a Windows Qt application paired with **Pokebot-Luma**, a Luma3DS-derived `boot.firm` containing the Pokebot-specific Rosalina bridge.
+
+The current split transport is:
+
+- **UDP 4952 — read-only RAM bridge:** `PING`, `GAME_INFO`, `QUERY`, and bounded `READ` up to `0x200` bytes.
+- **UDP 4950 — input controller:** Luma3DS InputRedirection with Pokebot's additive active-low button merge so physical and injected buttons can coexist.
 
 The bot treats validated Pokémon RAM as the source of truth. OCR or image matching is **not** used as shiny authority.
 
-There is deliberately **no game-RAM write command** in the Pokebot bridge. RAM is used to observe the game and make safe automation decisions; Pokémon and encounter results are not modified.
+There is deliberately **no game-RAM write command** in the Pokebot RAM bridge. RAM is used to observe the game and make safe automation decisions; Pokémon and encounter results are not modified.
+
+### Current Pokebot-Luma hardware proof
+
+The following has been proven on real Alpha Sapphire 1.4 hardware:
+
+- Pokebot-Luma boots and returns to ORAS normally.
+- Physical A/B/D-pad and touchscreen remain usable.
+- Remote **A** and **START** reach ORAS through UDP `4950`.
+- A different physical button remains usable during a long synthetic button hold.
+- RAM `PING`, `GAME_INFO`, `QUERY`, and bounded `READ` work over UDP `4952`.
+- Alpha Sapphire is correctly identified as `000400000011C500 / sango-2`.
+- A real `wild/opponent0` PK6 at `0x081FFA6C` was read, decrypted and checksum-validated.
+- The hardware proof PK6 was species **#293 Whismur**, non-shiny, with a matching `0xEC9C` checksum.
+
+---
+
+## Pokebot-Luma Rosalina menu
+
+Pokebot-Luma adds a dedicated submenu to Rosalina.
+
+Open Rosalina with the normal Luma3DS combo:
+
+```text
+L + D-Pad Down + Select
+```
+
+Then open:
+
+```text
+Pokebot3DS Bridge...
+```
+
+The submenu contains:
+
+```text
+Toggle RAM Bridge
+Toggle Input Controller
+Enable Both
+Disable Both
+Status
+```
+
+For normal bot use, select **Enable Both** after the game and Wi-Fi are up.
+
+The v0p4 status screen reports:
+
+```text
+Pokebot-Luma v0p4
+
+RAM Bridge:       ON / OFF
+RAM result:       0x........
+RAM UDP:          4952
+Packets / Reads:  ... / ...
+
+Input Controller: ON / OFF
+Input result:     0x........
+Input UDP:        4950
+```
+
+`RAM result` and `Input result` should normally be `0x00000000` after successful startup.
+
+The two services are intentionally separate: RAM authority remains read-only on `4952`, while normal gameplay input uses Luma's HID/InputRedirection path on `4950`.
+
+### Additive physical + remote buttons
+
+The standard 3DS HID button mask is active-low. Pokebot-Luma merges physical and remote masks with:
+
+```text
+effective_raw_hid = physical_raw_hid & remote_raw_hid
+```
+
+This means, semantically:
+
+```text
+effective pressed buttons = physical OR injected
+```
+
+A remote press therefore does not intentionally take ownership of the entire physical button state.
 
 ---
 
@@ -130,22 +212,22 @@ Both projects can communicate with a Nintendo 3DS and inspect Pokémon data in m
 | Pokebot3DS-CFW | PKMN-NTR |
 |---|---|
 | Built specifically for **shiny-hunting automation** | General-purpose Pokémon memory editing/control tooling |
-| Uses a **custom Nexus3DS-derived Pokebot bridge** | Built around **NTR-CFW / NTRClient** |
+| Uses a **custom Luma3DS-derived Pokebot-Luma bridge** | Built around **NTR-CFW / NTRClient** |
 | Game RAM access is intentionally **read-only** | Supports reading and writing game memory |
 | Does **not** expose Pokémon injection or editing | Can be used to edit or inject game data/Pokémon |
-| Does **not** use the NTR debugger or GDB | Uses NTR's remote memory/debugging architecture |
+| Does **not** use the NTR debugger or GDB for normal hunt authority | Uses NTR's remote memory/debugging architecture |
 | RAM determines the encounter result, then normal controller/touch input plays the game | Memory access can be used for editing as well as automation |
 | Invalid or uncertain authority causes a **safety HOLD** | Not designed around Pokebot3DS-CFW's fail-closed shiny-hunting state machine |
 
 ### How RAM reading works
 
-Pokebot3DS-CFW does not attach a debugger to the game. Instead, the custom `boot.firm` adds a small read-only service inside Rosalina/Nexus3DS.
+Pokebot3DS-CFW does not attach a debugger to the game for normal hunt authority. The custom Luma3DS-derived firmware adds a small read-only Pokebot service inside Rosalina.
 
 1. The Windows bot sends a bounded RAM request to the 3DS over **UDP port 4952**.
 2. The Pokebot bridge identifies the supported running game by title ID and opens the game process internally.
 3. Before reading, the bridge checks the requested memory region and its permissions.
-4. The requested bytes are read through the 3DS process-memory services and returned to the PC.
-5. The PC decodes the returned game structure — for example a PK6 — and validates the checksum, species and other required identity/state fields.
+4. The requested bytes are temporarily mapped/read through the 3DS process-memory services and returned to the PC.
+5. The PC decodes the returned game structure — for example a PK6 — and validates checksum, species and the required identity/state fields.
 6. Shiny state is calculated from the data that the game itself already generated.
 7. If the data or game state is invalid, missing or uncertain, the bot **HOLDs instead of authorising a reset**.
 
@@ -156,7 +238,7 @@ Pokebot3DS-CFW on PC
         |
         |  bounded UDP 4952 read request
         v
-Pokebot bridge in Nexus3DS / Rosalina
+Pokebot RAM bridge in Pokebot-Luma / Rosalina
         |
         |  read-only process-memory access
         v
@@ -167,35 +249,16 @@ Pokémon OR / AS RAM
 Validate PK6 / game state -> shiny decision -> continue or HOLD
 ```
 
-### How controller and touchscreen inputs are sent
+### How controller inputs are sent
 
-Inputs use the same custom Pokebot bridge rather than NTR. They are kept separate from the RAM-reading authority: an input command controls the game, but it does not modify the game's memory.
+Controller input is separate from RAM authority.
 
-1. The PC sends an input command to the bridge over **UDP 4952** with a unique sequence ID.
-2. The 3DS acknowledges the request so the PC knows whether the command was accepted.
-3. The bridge applies the requested HID state through the 3DS input path, producing normal button/directional input.
-4. Timed HID commands automatically release after their requested hold period and can include a settle period.
-5. Native touchscreen commands can press an exact bottom-screen coordinate without requiring a capture card or mouse automation.
-6. Latched HID commands can keep a button held until an explicit release is sent when a hunt requires a continuous hold.
-7. `RELEASE_ALL` provides an emergency neutral state, and sequence-ID deduplication prevents a retried UDP packet from creating a second unintended gameplay press.
+1. The PC sends the Luma InputRedirection packet to **UDP 4950**.
+2. Pokebot-Luma's HID hook merges the remote active-low button mask with the physical console mask.
+3. ORAS receives the resulting normal HID state.
+4. Returning the remote mask to neutral releases only the injected state; physical controls remain available.
 
-```text
-Pokebot3DS-CFW on PC
-        |
-        |  sequence-numbered input request
-        v
-Pokebot input bridge
-        |
-        +--> Button / D-pad / Circle-pad style HID input
-        +--> Native touchscreen pulse
-        +--> Latched hold when required
-        |
-        v
-Normal 3DS gameplay input
-        |
-        +--> ACK / status returned to the PC
-        +--> RELEASE_ALL available as a safety path
-```
+The standalone real-hardware proof has confirmed remote A, remote START and physical/remote coexistence. Integrated hunt regression testing is still required before every older movement/touch path is re-labelled as proven under Pokebot-Luma.
 
 This separation is intentional: **RAM tells the bot what happened; controller/touch input tells the game what to do next.** RAM is never written to in order to force a hunt result.
 
@@ -207,20 +270,20 @@ This separation is intentional: **RAM tells the bot what happened; controller/to
 |---|---|---|
 | Game detection | ✅ `...C500 / sango-2` | ✅ `...C400 / sango-1` |
 | Trainer / party RAM | ✅ Proven | ✅ Proven |
-| Wild PK6 / battle RAM | ✅ Proven | ✅ Proven |
+| Wild PK6 / battle RAM | ✅ Proven; Pokebot-Luma real PK6 proof complete | ✅ Existing OR path proven; Luma integrated regression pending |
 | Player X/Z + zone RAM | ✅ Proven | ✅ Proven |
 | Birch starter chooser | ✅ Proven | ✅ Proven |
 | Treecko / Torchic / Mudkip | ✅ Proven | ✅ Proven |
 | Communication-error `code.ips` | ✅ Hardware proven | ✅ Hardware proven |
 | Whole-game Wild terrain DB | ✅ Proven | ✅ Shared ORAS topology proven |
-| Wild Walk / Run backend | ✅ Hardware proven | ✅ Hardware proven |
-| Acro Bunny backend | ✅ 10/10 proof | ✅ Shared backend enabled |
+| Wild Walk / Run backend | ✅ Hardware proven on prior transport | ✅ Hardware proven on prior transport |
+| Acro Bunny backend | ✅ 10/10 proof on prior transport | ✅ Shared backend enabled |
 | Natural Hordes | ✅ Hardware-tested | ⚪ OR-specific proof pending |
 | Sweet Scent Hordes | ✅ Hardware-tested | ⚪ OR-specific proof pending |
 | Cave Walk / Run / Acro Bunny | ✅ Hardware-tested | ⚪ OR-specific proof pending |
 | Surf / Ocean | ✅ Hardware-tested | ⚪ OR-specific proof pending |
 | Discord notifications / Rich Presence | ✅ Implemented | ✅ Shared PC feature |
-| Direct top-screen framebuffer capture | 🟡 PC image pipeline built | 🟡 Shared pipeline; Discord attachment still pending |
+| Direct top-screen framebuffer capture | 🟡 PC pipeline retained; Pokebot-Luma transport pending | 🟡 Same |
 | Block list | ✅ Implemented | ✅ Shared PC feature |
 
 Omega Ruby completed the finite automated starter reset validation **6/6**, including two successful cycles for each Hoenn starter. The three locked starter modules are shared between the two ORAS profiles rather than duplicated.
@@ -229,7 +292,7 @@ Omega Ruby completed the finite automated starter reset validation **6/6**, incl
 
 ## HUNTS — ORAS encounter browser
 
-The **HUNTS** tab is now an encounter browser rather than a settings page.
+The **HUNTS** tab is an encounter browser rather than a settings page.
 
 Locations are separated by encounter environment/method so different hunt types are not mixed together. Depending on the location this includes:
 
@@ -281,8 +344,8 @@ For an authoritative starter or wild encounter:
 2. Perform a bounded PK6 read.
 3. Validate structure/checksum/species and required identity fields.
 4. Calculate shiny state from RAM.
-5. **Shiny = absolute HOLD.**
-6. Only validated non-shiny authority permits the next reset/escape action.
+5. **Shiny = absolute HOLD** unless an explicitly configured block-list rule says that species is not a keeper.
+6. Only validated non-shiny/non-keeper authority permits the next reset/escape action.
 
 Unexpected state, wrong species, checksum failure, RAM failure or controller safety failure causes a HOLD rather than blind continuation.
 
@@ -298,36 +361,55 @@ Core principles:
 
 ## 3DS files
 
-The release contains:
+The current package contains:
 
 ```text
 3ds_sd/
-├─ boot.firm
+├─ boot.firm                         # Pokebot-Luma v0p4
+├─ README.txt
+├─ Pokebot-Luma-source/
+│  ├─ LUMA3DS_LICENSE.txt
+│  ├─ UPSTREAM.txt
+│  ├─ apply_additive_input_redirection.py
+│  ├─ apply_pokebot_menu.py         # adds Pokebot3DS Bridge... to Rosalina
+│  ├─ apply_ram_bridge.py
+│  └─ apply_ram_bridge_compile_fix.py
 └─ luma/
    └─ titles/
       ├─ 000400000011C400/
-      │  └─ code.ips        # Omega Ruby 1.4
+      │  └─ code.ips                # Omega Ruby 1.4
       └─ 000400000011C500/
-         └─ code.ips        # Alpha Sapphire 1.4
+         └─ code.ips                # Alpha Sapphire 1.4
 ```
 
-Back up your existing `boot.firm` before replacing it.
+Back up your existing SD-root `boot.firm` before replacing it.
 
-The current controller/RAM bridge uses **UDP 4952**. The `code.ips` files are separate game patches; they are not the controller.
+After booting the new firmware and launching ORAS, open Rosalina and choose **Pokebot3DS Bridge... → Enable Both**.
+
+Current networking:
+
+```text
+RAM bridge:       UDP 4952
+Input controller: UDP 4950
+```
+
+The `code.ips` files are separate game patches; they are not the controller.
+
+Pokebot-Luma is a modified Luma3DS build. The package includes the relevant Luma3DS license and source patch scripts, and the upstream Luma3DS commit used for this build is recorded in the packaged source notes.
 
 ---
 
 ```text
-dist/
-└─ Pokebot3DS-CFW/
-   ├─ Pokebot3DS-CFW.exe
-   ├─ _internal/
-   ├─ assets/
-   ├─ data/
-   ├─ 3ds_sd/
-   ├─ README.md
-   ├─ README_EXE.md
-   └─ HOW_TO_USE.txt
+Pokebot3DS-CFW/
+├─ 3ds_sd/
+├─ assets/
+├─ data/
+├─ pokebot/
+├─ qt_ui/
+├─ HOW_TO_USE.txt
+├─ MANIFEST_v0p42L.json
+├─ requirements.txt
+└─ run_qt_live.py
 ```
 
 ---
@@ -353,10 +435,14 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - [x] Omega Ruby finite starter reset cycle 6/6
 - [x] Random Hoenn starter mode
 - [x] OR + AS `code.ips` reset-route patches
-- [x] acknowledged UDP 4952 input controller
-- [x] native acknowledged touchscreen input
+- [x] Pokebot-Luma v0p4 menu/firmware foundation
+- [x] additive Luma InputRedirection buttons on UDP 4950
+- [x] physical + injected button coexistence proof
+- [x] read-only RAM bridge on UDP 4952
+- [x] RAM PING / GAME_INFO / QUERY / READ hardware proof
+- [x] real Alpha Sapphire wild PK6 read/decrypt/checksum proof through Pokebot-Luma
 - [x] Wild PK6 authority
-- [x] automatic Run after validated non-shiny
+- [x] automatic Run after validated non-shiny on the proven hunt backend
 - [x] Walk/Run finite Wild proof
 - [x] Acro Bunny finite Wild proof
 - [x] 30/30 complete W6 causal Wild baseline
@@ -370,11 +456,13 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - [x] Alpha Sapphire Surf/Ocean development path
 - [x] Discord notification integration
 - [x] Discord Rich Presence integration
-- [x] direct 3DS top-screen framebuffer-to-PC image pipeline
 - [x] block-list feature
 - [x] persistent stats/history and shiny phase tracking
 - [x] support ZIP export
-- [ ] attach direct 3DS screenshot to Discord shiny notification
+- [ ] integrated Pokebot-Luma short Wild regression
+- [ ] integrated Pokebot-Luma starter endurance regression
+- [ ] revalidate remote touchscreen hunt actions through Pokebot-Luma
+- [ ] add Pokebot-Luma direct framebuffer transport for Discord screenshots
 - [ ] Omega Ruby-specific Horde/Cave/Surf hardware parity
 - [ ] Johto postgame starter automation
 - [ ] Unova postgame starter automation
@@ -398,14 +486,16 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - ✅ Pokémon Omega Ruby 1.4
 - ✅ Pokémon Alpha Sapphire 1.4
 - ✅ English
-- ✅ Custom Nexus3DS-based Pokebot3DS-CFW bridge
-- ✅ UDP 4952 RAM + acknowledged input
+- ✅ Pokebot-Luma / Luma3DS-derived Pokebot bridge
+- ✅ UDP 4952 read-only RAM bridge
+- ✅ UDP 4950 additive button input
 - ✅ Windows Qt dashboard
 
 ### Not claimed yet
 - ❌ emulator support wont ever be supported by myself i dont have the means to port it to emulator
 - ❌ non-English game languages
-- ❌ postgame Johto/Unova/Sinnoh starter automation
+- ❌ full integrated-hunt regression on the new Pokebot-Luma transport
+- ❌ production postgame Johto/Unova/Sinnoh starter automation
 - ❌ production static hunts
 - ❌ production Fishing
 - ❌ XY / Gen 7 production support
@@ -420,11 +510,21 @@ Pokebot3DS-CFW is an independent homebrew/automation project. Use it only with r
 
 ## Latest development progress — August 2026
 
-The existing README above is intentionally preserved. This section records newer progress made after several of the earlier validation notes were written.
+The README sections above retain the established project history while this section records newer work.
 
-### Omega Ruby Wild automation is now hardware-proven
+### Pokebot-Luma low-level bridge
 
-Omega Ruby has now completed an automated **5/5 finite Wild Run proof** using the frozen W6 causal wild state machine on real hardware.
+The active firmware is now **Pokebot-Luma v0p4**, a Luma3DS-derived build with a dedicated **Pokebot3DS Bridge** Rosalina submenu.
+
+The controller side uses Luma's HID/InputRedirection architecture. The button hook uses additive active-low merging, which has been proven on real ORAS hardware with remote A, remote START, physical controls and simultaneous physical/remote button use.
+
+The RAM side is a separate read-only UDP service on port `4952`. It supports only `PING`, `GAME_INFO`, `QUERY` and bounded `READ` up to `0x200`; there is no game-memory write command.
+
+A real Alpha Sapphire wild Pokémon structure was read through this bridge from `0x081FFA6C`, decrypted as a valid Gen 6 PK6 and accepted only after its checksum matched. This proves that the Luma-based bridge reaches the authoritative game data required by the hunt backend.
+
+### Omega Ruby Wild automation is hardware-proven
+
+Omega Ruby completed an automated **5/5 finite Wild Run proof** using the frozen W6 causal wild state machine on real hardware.
 
 - detected game: **Pokémon Omega Ruby 1.4** (`...C400 / sango-1`)
 - exactly **5/5 encounters completed successfully**
@@ -433,13 +533,11 @@ Omega Ruby has now completed an automated **5/5 finite Wild Run proof** using th
 - non-shiny encounters escaped automatically
 - post-escape field authority and encounter-terrain containment re-confirmed before movement resumed
 - zero touch-timeout recoveries during the proof
-- shiny or invalid authority still causes an **absolute HOLD**
+- shiny or invalid authority causes a HOLD
 
-This newer proof advances Omega Ruby beyond the earlier **“Shared backend enabled”** wording in older validation notes. The proven Run behaviour is now treated as a frozen working path rather than something to optimise unnecessarily.
+That proof predates the Pokebot-Luma transport migration, so the state machine remains frozen while the new low-level transport receives targeted regression testing instead of being re-designed.
 
-The normal Dashboard Wild hunt is **unlimited** and continues until the user stops it, a shiny is found, or a safety condition causes a HOLD. The separate finite launcher remains a diagnostic/proof tool.
-
-Early real-hardware testing has also successfully triggered and handled Wild encounters in several additional grass areas beyond the original Route 101 proof area, including tests that did not require a route-specific grass database entry for each location. Broader map-by-map coverage is still being accumulated rather than assumed complete.
+The normal Dashboard Wild hunt is **unlimited** and continues until the user stops it, a keeper shiny is found, or a safety condition causes a HOLD. The separate finite launcher remains a diagnostic/proof tool.
 
 ### Wild causal baseline and terrain-aware movement
 
@@ -453,45 +551,41 @@ The Wild engine uses:
 - one authoritative PK6 logical read per encounter
 - checksum/species/TID-SID validation
 - RAM shiny decision
-- absolute HOLD on shiny or invalid state
-- native acknowledged touchscreen Run input
+- HOLD on keeper shiny or invalid state
+- native touchscreen Run input
 - post-escape field/terrain authority before movement resumes
 
-The proven escape path commonly accepts the Run action after roughly **12–13 native touchscreen pulses**. Because it is already reliable and exits battle quickly, that sequence is intentionally being left alone rather than shortened just for timing.
+The proven escape path commonly accepts Run after roughly **12–13 touchscreen pulses**. Because it is already reliable and exits battle quickly, that sequence is intentionally not being shortened merely for timing.
 
 ### Horde encounters
 
 Horde support has progressed beyond simply displaying Horde encounter tables in HUNTS.
 
-Development/hardware testing now includes:
+Development/hardware testing includes:
 
 - natural Horde encounter handling
-- RAM inspection of all five Pokémon in a Horde rather than treating the encounter as one Pokémon
+- RAM inspection of all five Pokémon in a Horde
 - shiny safety across the Horde slots
 - Sweet Scent-triggered Horde automation
-- continuation only after the Horde has been validated as safe/non-shiny
+- continuation only after the Horde has been validated as safe/non-keeper
 
-The currently proven Horde work is on Alpha Sapphire; Omega Ruby-specific Horde parity remains to be validated before it is marked complete for both games.
+The currently proven Horde work is on Alpha Sapphire; Omega Ruby-specific Horde parity remains to be validated.
 
 ### Cave hunting
 
 Cave hunting has been implemented and hardware-tested in Alpha Sapphire, including Fiery Path development runs.
 
-The cave path reuses the RAM-authoritative Wild safety model and supports the movement styles that have been proven there, including Walk/Run and Acro Bunny development paths. Cave movement is treated separately from outdoor grass so the bot does not assume every encounter area has the same terrain geometry.
-
-Omega Ruby-specific cave parity is still tracked separately rather than assumed from Alpha Sapphire.
+The cave path reuses the RAM-authoritative Wild safety model and supports proven Walk/Run and Acro Bunny development paths. Cave movement is treated separately from outdoor grass so the bot does not assume every encounter area has the same terrain geometry.
 
 ### Surf and Ocean hunting
 
-Surf/Ocean hunting has also moved beyond encounter-browser data and into real automation testing.
+Surf/Ocean hunting has moved beyond encounter-browser data and into real automation testing.
 
 The Surf path uses the same fundamental rule as land Wilds: the encounter result comes from validated PK6 RAM, not the screen. Movement/continuation authority is kept separate from the Pokémon shiny decision so an unexpected water/field state cannot authorise blind movement.
 
-Alpha Sapphire Surf/Ocean development has been hardware-tested; broader production coverage and Omega Ruby-specific parity remain open work.
-
 ### Random Hoenn starters
 
-A **Random** starter mode has been added for the hardware-proven Hoenn trio.
+A **Random** starter mode is present for the hardware-proven Hoenn trio.
 
 On every reset the orchestration layer independently chooses one of:
 
@@ -499,51 +593,40 @@ On every reset the orchestration layer independently chooses one of:
 - Torchic
 - Mudkip
 
-The random chooser only selects which locked starter module runs. It does **not** replace or rewrite the proven Treecko/Torchic/Mudkip selection logic, and the individual per-starter ledgers remain authoritative.
+The random chooser only selects which locked starter module runs. It does **not** replace or rewrite the proven Treecko/Torchic/Mudkip selection logic.
 
-During hardware testing an orchestration regression caused Random mode to select Treecko and Torchic while omitting Mudkip, even though direct Mudkip selection still worked. That Random-mode regression has now been fixed and the current build can dispatch all three Hoenn starters through Random mode.
+### Long-run starter validation
 
-### Long-run starter and input validation
+The previous production input path completed long real-hardware starter runs, including one run of **415 resets in a little over four hours** without a stuck/held-input failure.
 
-The custom `boot.firm` input path has now been exercised in longer real-hardware starter runs rather than only short finite proofs.
+Torchic has also been observed at roughly **35–36 seconds per reset**, or around **100 resets/hour**, on the development hardware/setup. These are observed benchmarks rather than guaranteed rates.
 
-- one run completed **415 resets in a little over four hours** after moving to the new input path
-- no stuck/held-input failure was observed during that run
-- the same acknowledged input bridge handles buttons, directional input and native touchscreen pulses
-- starter shiny authority remains RAM-based; the input bridge only performs normal gameplay controls
-
-Torchic has also been observed at roughly **35–36 seconds per reset**, or around **100 resets/hour**, on the current hardware/setup. This is an observed development benchmark rather than a guaranteed rate on every network or 3DS.
+The starter state machines and timing constants are being preserved during the Pokebot-Luma transport migration; the goal is transport replacement without disturbing their proven game choreography.
 
 ### Discord integration
 
-Discord support is now part of the desktop-bot work rather than a future concept.
-
-Current Discord development includes:
+Discord support includes:
 
 - bot-account based notifications
 - hunt/status information suitable for remote monitoring
-- Discord Rich Presence work for current hunt/status/elapsed visibility
+- Discord Rich Presence
 - shiny/event notification plumbing
 
-Discord is not used as hunt authority. A Discord failure cannot decide whether a Pokémon is shiny or authorize a reset; RAM safety remains independent.
+Discord is not hunt authority. A Discord failure cannot decide whether a Pokémon is shiny or authorize a reset; RAM safety remains independent.
 
 ### Direct 3DS screenshot pipeline
 
-A direct screenshot path is being built so shiny notifications do not have to depend on an external capture card.
+The PC-side framebuffer/image reconstruction code is retained, but **Pokebot-Luma v0p4 does not yet expose the direct framebuffer transport commands required by that pipeline**.
 
-The current pipeline can work from the 3DS top-screen framebuffer, transfer the image data through bounded/verified chunks, reconstruct the **400×240** top-screen image on the PC, and encode it as a normal image file. This is deliberately separate from shiny authority: the screenshot is evidence/presentation only.
-
-The remaining step is to wire that direct 3DS image into the final Discord shiny notification attachment path. Until that wiring is hardware-proven, the README does **not** claim that Discord screenshot delivery itself is complete.
+Screenshot delivery is presentation-only and does not affect RAM shiny authority.
 
 ### Block list
 
-The bot also contains a **block-list** feature. It is tracked separately from the RAM shiny decision and is part of the user-control/safety layer. The README records the feature as implemented without inventing undocumented behaviour that has not yet been recovered from the current packaged build.
+The bot contains a **block-list** feature. It is tracked separately from RAM shiny calculation and forms part of keeper/continuation policy.
 
-### STATS is now analytics/history focused
+### STATS is analytics/history focused
 
-The STATS design is separated from hunt selection and configuration. Its role is to show what the bot has achieved over time.
-
-Current analytics coverage includes:
+The STATS design is separated from hunt selection and configuration. Current analytics coverage includes:
 
 - lifetime encounters and shinies
 - current phase and phase encounters
@@ -551,39 +634,20 @@ Current analytics coverage includes:
 - current target, game, location and hunt method
 - shiny-value and IV extrema
 - per-species history
-- method breakdowns
-- location breakdowns
+- method and location breakdowns
 - Omega Ruby / Alpha Sapphire / combined ORAS totals
 - chronological shiny history
 - records such as fastest shiny and longest phase
-- encounters/hour, cumulative encounter/shiny, species and method graphs
+- encounter/shiny/species/method graphs
 - odds-cycle progress
-
-Shiny Charm-adjusted odds are only used when Charm status has a proven RAM authority for the active game; unknown authority is not silently guessed.
 
 ### TOOLS is for diagnostics and support
 
-TOOLS is being kept separate from normal hunting and settings. The page is organised around:
+TOOLS is kept separate from normal hunting and settings. The page is organised around:
 
 **3DS Diagnostics | RAM & Game Data | Maintenance | Support**
 
-The Tools design includes a top-level **System Health** view plus utilities for:
-
-- UDP 4952 connection/game detection
-- controller acknowledgement testing
-- safe read-only RAM inspection
-- manual PK6 inspection
-- terrain/position/corridor inspection
-- encounter-table lookup
-- Shiny Charm authority display
-- local game-patch validation
-- CFW/bridge capability information
-- sprite-cache maintenance
-- support ZIP export
-- opening Stats/Logs/Cache/Support/AppData folders
-- bot/build/patch/database information
-- non-destructive self-test diagnostics
-- optional advanced raw/state/protocol diagnostics
+The design includes utilities for connection/game detection, controller testing, safe read-only RAM inspection, manual PK6 inspection, terrain/position/corridor inspection, encounter-table lookup, game-patch validation, support ZIP export and local application folders.
 
 Unsupported or not-yet-proven authorities are shown as **UNVERIFIED** rather than fabricated as PASS.
 
