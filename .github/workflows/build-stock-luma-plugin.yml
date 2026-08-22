@@ -49,14 +49,18 @@ jobs:
           set -eux
           "$DEVKITARM/bin/arm-none-eabi-g++" --version | head -1
           python3 stock_luma_plugin/tools/apply_status_overlay.py
-          sed -i 's/Pokebot Bridge v0p2/Pokebot Bridge v0p3/' stock_luma_plugin/Sources/BridgeOverlay.hpp
-          grep -q 'Pokebot Bridge v0p3' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          python3 stock_luma_plugin/tools/apply_soc_sharedmem_fix.py
+          sed -i 's/Pokebot Bridge v0p2/Pokebot Bridge v0p4/' stock_luma_plugin/Sources/BridgeOverlay.hpp
+          grep -q 'Pokebot Bridge v0p4' stock_luma_plugin/Sources/BridgeOverlay.hpp
           grep -q 'BridgeOverlay::RecordPacket' stock_luma_plugin/Sources/Main.cpp
           grep -q 'srvInit()' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'kSocBufferSize = 0x10000' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'kSocBufferAddress = 0x07500000u' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'kSocBufferSize = 0x20000' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'svcControlMemoryUnsafe' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'svc 0xA3' stock_luma_plugin/Sources/pokebot_csvc.s
           grep -q 'local.sin_addr.s_addr = gethostid()' stock_luma_plugin/Sources/Main.cpp
           ! grep -q 'SO_RCVTIMEO' stock_luma_plugin/Sources/Main.cpp
-          grep -q 'Pokebot3DS-3GX-v0p3' stock_luma_plugin/Sources/Main.cpp
+          grep -q 'Pokebot3DS-3GX-v0p4' stock_luma_plugin/Sources/Main.cpp
           make -C stock_luma_plugin \
             CTRPFLIB=/tmp/ctrpf/Library \
             CTRPFHEADERS=/tmp/ctrpf/Library/include
@@ -68,6 +72,6 @@ jobs:
       - name: Upload plugin
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot3DSBridge-v0p3-SocInitFix
+          name: Pokebot3DSBridge-v0p4-SystemSocMemory
           path: stock_luma_plugin/Pokebot3DSBridge.3gx
           if-no-files-found: error
