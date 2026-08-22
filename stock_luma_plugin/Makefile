@@ -38,7 +38,9 @@ SFILES   := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 export LD       := $(CXX)
 export OFILES   := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
 export INCLUDE  := $(foreach dir,$(INCLUDES),-I$(TOPDIR)/$(dir)) \
-                   $(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+                   -I$(CTRPFLIB)/include \
+                   -I$(CTRPFLIB)/include/CTRPluginFramework \
+                   $(foreach dir,$(CTRULIB) $(PORTLIBS),-I$(dir)/include) \
                    -I$(TOPDIR)/$(BUILD)
 export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
