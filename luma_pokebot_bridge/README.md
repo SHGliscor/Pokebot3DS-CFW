@@ -1,10 +1,10 @@
-# Pokebot-Luma v0p3
+# Pokebot-Luma v0p4
 
 Experimental Luma3DS-derived build for Pokebot3DS.
 
 ## Hardware-proven foundation
 
-The v0p2 menu-only foundation has now passed real-hardware testing:
+The v0p2 menu-only foundation passed real-hardware testing:
 
 - modified Luma boots normally
 - HOME Menu controls and touch work
@@ -13,44 +13,68 @@ The v0p2 menu-only foundation has now passed real-hardware testing:
 - Enable Both / Disable Both / Status work without the v0p1 Rosalina crash
 - a reboot returns both Pokebot states to OFF
 
-## v0p3: additive controller proof
+## Hardware-proven controller: v0p3
 
-v0p3 connects the Pokebot `Input Controller` switch to Luma3DS's existing InputRedirection backend on UDP port 4950, but changes the HID button merge rule.
+v0p3 connected the Pokebot `Input Controller` switch to Luma3DS's existing InputRedirection backend on UDP port 4950 and changed only the HID button merge rule.
 
-Stock InputRedirection selects remote HID whenever the remote mask is non-neutral. Pokebot instead merges the active-low masks:
+Pokebot merges the active-low masks:
 
 `effective_raw_hid = physical_raw_hid & remote_raw_hid`
 
-Because a cleared HID bit means pressed, this gives the intended behavior:
+Because a cleared HID bit means pressed, this gives:
 
 `effective buttons = physical OR injected`
 
-Examples:
+Real-hardware results:
 
-- physical neutral `FFF` + remote A `FFE` -> `FFE` (A)
-- physical B `FFD` + remote neutral `FFF` -> `FFD` (B)
-- physical B `FFD` + remote A `FFE` -> `FFC` (A+B)
+- synthetic A works in ORAS
+- synthetic START works in ORAS
+- physical buttons remain usable
+- touchscreen remains usable
+- a different physical button works during a long synthetic hold
+- physical controls remain normal after disabling the controller
 
-Touch and circle-pad handling remain upstream Luma behavior for this proof: when the remote packet is neutral, the physical source passes through.
+The v0p3 controller path is therefore preserved unchanged in v0p4.
 
-The `RAM Bridge` switch remains state-only in v0p3. No Pokebot RAM networking is added yet.
+## v0p4: read-only RAM bridge
 
-## v0p3 hardware gate
+v0p4 turns the `RAM Bridge` switch into a real UDP server on port 4952. The framing is intentionally compatible with the earlier Pokebot bridge work:
+
+- `PING`
+- `GAME_INFO`
+- `QUERY`
+- bounded `READ`
+
+Maximum READ size is `0x200` bytes per request.
+
+The bridge supports ORAS title IDs:
+
+- Omega Ruby: `000400000011C400` / `sango-1`
+- Alpha Sapphire: `000400000011C500` / `sango-2`
+
+### Read-only safety rule
+
+v0p4 contains no game-memory write command. RAM access is limited to memory-map queries and bounded reads. The read path opens the current ORAS process, verifies the requested region/permissions, temporarily maps only the page(s) required for that request, copies the requested bytes, and immediately unmaps them.
+
+This is deliberately not continuous polling.
+
+## v0p4 hardware gate
 
 1. Boot normally and launch ORAS.
 2. Open Rosalina -> `Pokebot3DS Bridge...`.
-3. Select `Toggle Input Controller` and confirm Status shows `Input Controller: ON`, result `0x00000000`, UDP port 4950.
-4. Return to ORAS and confirm physical A/B/D-pad/touch still work.
-5. On the PC run:
-   `python test_pokebot_luma_input.py <3DS-IP> A`
-6. Confirm ORAS reacts to the synthetic A pulse.
-7. Repeat with START if useful:
-   `python test_pokebot_luma_input.py <3DS-IP> START`
-8. Immediately confirm physical controls still work.
-9. For the strongest coexistence proof, use `--hold 1.5` and press a different physical button during the synthetic hold.
-10. Disable Input Controller and confirm physical controls continue normally.
+3. Select `Enable Both`.
+4. Open Status and confirm both are ON, both results are `0x00000000`, RAM UDP is 4952 and Input UDP is 4950.
+5. Return to ORAS and confirm physical controls/touch still work.
+6. From the extracted `PC_TEST` directory run:
 
-Do not proceed to the RAM bridge until this additive controller path is hardware-proven.
+   `python test_pokebot_luma_ram.py <3DS-IP>`
+
+   The default smoke test reads 0x20 bytes from the game code region at `0x00100000`.
+7. Expected: PING PASS, GAME_INFO PASS, QUERY PASS and READ PASS.
+8. Check the Rosalina Status screen again. Packet count should have increased and Reads should be at least 1.
+9. Re-test synthetic A or START with the already-proven input tester and confirm physical controls still work afterward.
+
+Only after the generic bounded RAM read passes should the bot use the bridge for PK6 encounter reads.
 
 Upstream base: LumaTeam/Luma3DS commit `d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a`.
 
