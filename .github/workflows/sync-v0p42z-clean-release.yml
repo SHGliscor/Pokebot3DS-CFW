@@ -9,7 +9,6 @@ on:
   pull_request:
     branches:
       - main
-      - temp-v0p42z-materializer-base
     paths:
       - source_payload/v0p42Z/READY
       - .github/workflows/sync-v0p42z-clean-release.yml
@@ -28,13 +27,56 @@ jobs:
           ref: sync-v0p42z-clean-release
           fetch-depth: 0
 
-      - name: Reconstruct verified clean release archive
+      - name: Reconstruct and SHA-verify clean release archive
         shell: bash
         run: |
           set -euo pipefail
-          cat source_payload/v0p42Z/parts/part-*.b64 > /tmp/pokebot-v0p42Z-clean.tar.xz.b64
-          base64 --decode --ignore-garbage /tmp/pokebot-v0p42Z-clean.tar.xz.b64 > /tmp/pokebot-v0p42Z-clean.tar.xz
-          echo 'e75cd654dd2691b992b20d3b0f118eb8538e1acee2ac663daff2927bc802c0ab  /tmp/pokebot-v0p42Z-clean.tar.xz' | sha256sum -c -
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib
+
+          expected = 'e75cd654dd2691b992b20d3b0f118eb8538e1acee2ac663daff2927bc802c0ab'
+          alphabet = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
+          parts = sorted(Path('source_payload/v0p42Z/parts').glob('part-*.b64'))
+          cleaned = []
+          for p in parts:
+              raw = p.read_text(encoding='ascii', errors='ignore')
+              s = ''.join(ch for ch in raw if ch in alphabet)
+              cleaned.append(s)
+              print(f'{p.name}: raw={len(raw)} clean={len(s)} mod4={len(s)%4} tail={s[-8:]}')
+
+          candidates = {}
+          joined = ''.join(cleaned)
+          variants = {
+              'joined': joined,
+              'joined_no_internal_padding': ''.join(s.replace('=', '') for s in cleaned),
+          }
+          for name, text in variants.items():
+              padded = text + ('=' * ((-len(text)) % 4))
+              try:
+                  candidates[name] = base64.b64decode(padded, validate=False)
+              except Exception as e:
+                  print(f'{name}: decode failed: {e}')
+
+          try:
+              out = bytearray()
+              for s in cleaned:
+                  text = s + ('=' * ((-len(s)) % 4))
+                  out.extend(base64.b64decode(text, validate=False))
+              candidates['per_part'] = bytes(out)
+          except Exception as e:
+              print(f'per_part: decode failed: {e}')
+
+          for name, data in candidates.items():
+              digest = hashlib.sha256(data).hexdigest()
+              print(f'{name}: bytes={len(data)} sha256={digest}')
+              if digest == expected:
+                  Path('/tmp/pokebot-v0p42Z-clean.tar.xz').write_bytes(data)
+                  print(f'MATCH: {name}')
+                  break
+          else:
+              raise SystemExit('No reconstruction candidate matched the verified v0p42Z SHA256')
+          PY
 
       - name: Extract clean release over repository
         shell: bash
@@ -50,6 +92,7 @@ jobs:
           set -euo pipefail
           test -f run_qt_live.py
           test -f requirements.txt
+          test -f pokebot/common/luma_input.py
           test -f pokebot/common/bridge.py
           test -f pokebot/common/oras_profiles.py
           test -f qt_ui/main_window.py
