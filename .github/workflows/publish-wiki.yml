@@ -1,0 +1,56 @@
+name: Publish Wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wiki/**'
+      - '.github/workflows/publish-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-wiki
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Sync wiki folder to GitHub Wiki
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main repository
+        uses: actions/checkout@v4
+
+      - name: Publish wiki
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          rm -rf .wiki-sync
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" .wiki-sync
+
+          # Mirror the canonical wiki/ source into the real GitHub Wiki repo.
+          # Keep only the wiki repo's own .git directory, then copy our pages.
+          find .wiki-sync -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -a wiki/. .wiki-sync/
+
+          # README.md documents the source folder and should not become a Wiki page.
+          rm -f .wiki-sync/README.md
+
+          cd .wiki-sync
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "GitHub Wiki is already up to date."
+            exit 0
+          fi
+
+          git commit -m "Sync wiki from main repository"
+          git push origin HEAD
