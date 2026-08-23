@@ -1,27 +1,27 @@
 ## Pokebot3DS-CFW
 
-- [Home](Home.md)
-- [Getting Started](Getting-Started.md)
-- [Pokebot-Luma](Pokebot-Luma.md)
-- [ORAS code.ips](Code-IPS.md)
-- [Dashboard Guide](Dashboard-Guide.md)
-- [Shiny Detection](Shiny-Detection.md)
+- [Home](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki)
+- [Getting Started](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Getting-Started)
+- [Pokebot-Luma](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Pokebot-Luma)
+- [ORAS code.ips](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Code-IPS)
+- [Dashboard Guide](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Dashboard-Guide)
+- [Shiny Detection](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Shiny-Detection)
 
 ### Hunt guides
-- [Starter Hunts](Starter-Hunts.md)
-- [Wild Hunts](Wild-Hunts.md)
-- [Cave Hunts](Cave-Hunts.md)
-- [Horde Hunts](Horde-Hunts.md)
-- [Surf / Ocean](Surf-Ocean-Hunts.md)
-- [Encounter Database](Encounter-Database.md)
+- [Starter Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Starter-Hunts)
+- [Wild Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Wild-Hunts)
+- [Cave Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Cave-Hunts)
+- [Horde Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Horde-Hunts)
+- [Surf / Ocean](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Surf-Ocean-Hunts)
+- [Encounter Database](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Encounter-Database)
 
 ### Monitoring
-- [Stats / History](Stats-History.md)
-- [Discord](Discord.md)
+- [Stats / History](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Stats-History)
+- [Discord](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Discord)
 
 ### Support
-- [Troubleshooting](Troubleshooting.md)
-- [Known Issues](Known-Issues.md)
-- [Technical Reference](Technical-Reference.md)
-- [Development History](Development-History.md)
-- [Roadmap](Roadmap.md)
+- [Troubleshooting](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Troubleshooting)
+- [Known Issues](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Known-Issues)
+- [Technical Reference](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Technical-Reference)
+- [Development History](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Development-History)
+- [Roadmap](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Roadmap)
