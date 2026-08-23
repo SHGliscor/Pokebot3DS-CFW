@@ -9,6 +9,7 @@ on:
   pull_request:
     branches:
       - main
+      - temp-v0p42z-materializer-base
     paths:
       - source_payload/v0p42Z/READY
       - .github/workflows/sync-v0p42z-clean-release.yml
@@ -32,7 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           cat source_payload/v0p42Z/parts/part-*.b64 > /tmp/pokebot-v0p42Z-clean.tar.xz.b64
-          base64 --decode /tmp/pokebot-v0p42Z-clean.tar.xz.b64 > /tmp/pokebot-v0p42Z-clean.tar.xz
+          base64 --decode --ignore-garbage /tmp/pokebot-v0p42Z-clean.tar.xz.b64 > /tmp/pokebot-v0p42Z-clean.tar.xz
           echo 'e75cd654dd2691b992b20d3b0f118eb8538e1acee2ac663daff2927bc802c0ab  /tmp/pokebot-v0p42Z-clean.tar.xz' | sha256sum -c -
 
       - name: Extract clean release over repository
