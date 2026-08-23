@@ -1,4 +1,4 @@
-name: Recover v0p42Z controller source
+name: Apply v0p42Z input status recovery hotfix
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  recover-controller-source:
+  patch-controller:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,70 +19,149 @@ jobs:
           ref: sync-v0p42z-clean-release
           fetch-depth: 0
 
-      - name: Recover target files from intact archive prefix
+      - name: Patch exact recovered v0p42Z transport
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import base64, io, lzma, tarfile
 
-          alphabet = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
-          parts = sorted(Path('source_payload/v0p42Z/parts').glob('part-*.b64'))
-          clean = []
-          for p in parts[:18]:
-              raw = p.read_text(encoding='ascii', errors='ignore')
-              clean.append(''.join(ch for ch in raw if ch in alphabet))
+          path = Path('recovered_v0p42Z/pokebot/common/luma_input.py')
+          text = path.read_text(encoding='utf-8')
+          old = """        interval = max(0.010, min(0.100, float(poll_ms) / 1000.0))
+        samples = []
+        while time.monotonic() < deadline:
+            # Avoid polling faster than needed while still giving the bridge
+            # regular service opportunities for hold->settle->terminal state.
+            remaining_ms = int(current.get('remaining_ms', 0) or 0)
+            if remaining_ms > 80:
+                time.sleep(min(0.050, max(interval, (remaining_ms - 40) / 1000.0)))
+            else:
+                time.sleep(interval)
+            current = self._status(sequence)
+            samples.append({
+                'state': current['state'],
+                'state_name': current['state_name'],
+                'remaining_ms': current['remaining_ms'],
+                'raw_hid': current['raw_hid'],
+            })
+"""
+          new = """        interval = max(0.010, min(0.100, float(poll_ms) / 1000.0))
+        samples = []
+        status_timeouts = 0
+        max_status_timeouts = 2
+        while time.monotonic() < deadline:
+            # Avoid polling faster than needed while still giving the bridge
+            # regular service opportunities for hold->settle->terminal state.
+            remaining_ms = int(current.get('remaining_ms', 0) or 0)
+            if remaining_ms > 80:
+                time.sleep(min(0.050, max(interval, (remaining_ms - 40) / 1000.0)))
+            else:
+                time.sleep(interval)
 
-          encoded = ''.join(clean)
-          compressed = base64.b64decode(encoded, validate=True)
-          dec = lzma.LZMADecompressor()
-          data = dec.decompress(compressed)
-          print(f'intact compressed prefix: {len(compressed)} bytes')
-          print(f'partial tar output: {len(data)} bytes; xz_eof={dec.eof}')
+            try:
+                # INPUT_STATUS is read-only. If one status reply is lost after
+                # the gameplay command was already ACKed, keep querying this
+                # same gameplay sequence; never replay the button/touch command.
+                current = self._status(sequence)
+            except LumaInputError as exc:
+                if 'timeout' not in str(exc).lower():
+                    raise
+                status_timeouts += 1
+                samples.append({
+                    'event': 'STATUS_TIMEOUT',
+                    'sequence': int(sequence),
+                    'timeout_count': status_timeouts,
+                })
+                if status_timeouts > max_status_timeouts:
+                    break
+                # A lost read-only status packet must not turn a completed
+                # gameplay input into a false HOLD. Extend only by one bounded
+                # transport timeout per miss, capped by max_status_timeouts.
+                deadline += min(self.timeout, 1.0)
+                continue
 
-          wanted = {
-              'pokebot/common/luma_input.py',
-              'pokebot/common/acknowledged_input.py',
-              'pokebot/common/bridge.py',
-          }
-          found = {}
-          bio = io.BytesIO(data)
-          try:
-              tf = tarfile.open(fileobj=bio, mode='r:')
-              while True:
-                  try:
-                      member = tf.next()
-                  except (tarfile.ReadError, EOFError, OSError) as e:
-                      print(f'partial tar ended: {e}')
-                      break
-                  if member is None:
-                      break
-                  name = member.name.lstrip('./')
-                  if name in wanted and member.isfile():
-                      f = tf.extractfile(member)
-                      if f is not None:
-                          found[name] = f.read()
-                          print(f'RECOVERED {name}: {len(found[name])} bytes')
-          except tarfile.ReadError as e:
-              print(f'tar open/read ended: {e}')
-
-          if 'pokebot/common/luma_input.py' not in found:
-              raise SystemExit('luma_input.py was not present in the intact archive prefix')
-
-          root = Path('recovered_v0p42Z')
-          for name, content in found.items():
-              out = root / name
-              out.parent.mkdir(parents=True, exist_ok=True)
-              out.write_bytes(content)
+            samples.append({
+                'state': current['state'],
+                'state_name': current['state_name'],
+                'remaining_ms': current['remaining_ms'],
+                'raw_hid': current['raw_hid'],
+            })
+"""
+          if old not in text:
+              raise SystemExit('target _wait_terminal block not found exactly; refusing broad patch')
+          if text.count(old) != 1:
+              raise SystemExit('target _wait_terminal block was not unique; refusing broad patch')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
 
-      - name: Commit recovered controller source
+      - name: Syntax and focused recovery tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile recovered_v0p42Z/pokebot/common/luma_input.py
+          PYTHONPATH=recovered_v0p42Z python - <<'PY'
+          from pokebot.common.luma_input import (
+              LumaInputTransport, LumaInputError,
+              INPUT_STATE_ACCEPTED, INPUT_STATE_COMPLETED,
+          )
+
+          def accepted():
+              return {
+                  'sequence': 123,
+                  'state': INPUT_STATE_ACCEPTED,
+                  'state_name': 'ACCEPTED',
+                  'raw_hid': 0xFFE,
+                  'remaining_ms': 0,
+                  'runtime_flags': 1,
+                  'acknowledged': True,
+              }
+
+          t = LumaInputTransport('127.0.0.1', timeout=0.1)
+          calls = []
+          responses = [LumaInputError('Pokebot-Luma UDP/4952 timeout after 2 attempt(s)'), {
+              'sequence': 123,
+              'state': INPUT_STATE_COMPLETED,
+              'state_name': 'COMPLETED',
+              'raw_hid': 0xFFF,
+              'remaining_ms': 0,
+              'runtime_flags': 1,
+              'acknowledged': True,
+          }]
+          def fake_status(sequence):
+              calls.append(sequence)
+              item = responses.pop(0)
+              if isinstance(item, Exception):
+                  raise item
+              return item
+          t._status = fake_status
+          t.release_all = lambda *a, **k: None
+          result = t._wait_terminal(123, accepted(), hold_ms=1, settle_ms=1, poll_ms=10)
+          assert result['state'] == INPUT_STATE_COMPLETED
+          assert calls == [123, 123], calls
+          assert any(s.get('event') == 'STATUS_TIMEOUT' for s in result['samples'])
+          t.close()
+          print('PASS: transient status loss recovers on same gameplay sequence')
+
+          t = LumaInputTransport('127.0.0.1', timeout=0.1)
+          t._status = lambda sequence: (_ for _ in ()).throw(LumaInputError('INPUT_STATUS protocol failure'))
+          t.release_all = lambda *a, **k: None
+          try:
+              t._wait_terminal(321, accepted(), hold_ms=1, settle_ms=1, poll_ms=10)
+          except LumaInputError as exc:
+              assert 'protocol failure' in str(exc)
+          else:
+              raise AssertionError('non-timeout transport error was incorrectly swallowed')
+          t.close()
+          print('PASS: non-timeout transport errors still fail closed')
+          PY
+
+      - name: Commit tested hotfix
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add recovered_v0p42Z
-          git commit -m 'chore: recover exact v0p42Z controller source'
+          git add recovered_v0p42Z/pokebot/common/luma_input.py
+          git commit -m 'fix: recover transient acknowledged input status timeouts'
           git push origin HEAD:sync-v0p42z-clean-release
