@@ -864,3 +864,22 @@ RAM proves keeper shiny
 Single-opponent capture will be developed first. Horde capture will use a specialised front-end that protects the shiny Horde slot, removes only validated non-shiny opponents, then hands the surviving shiny to the same shared capture engine.
 
 Auto Capture is **not yet production implemented** and is not counted as completed work in the progress table.
+
+---
+
+## ORAS `code.ips` communication-error patch
+
+The per-game `code.ips` files are included because Pokémon Omega Ruby and Alpha Sapphire can show a **communication error** when remote/InputRedirection-style controller input is used while the game's PSS communication is still active.
+
+Later in the game, this can normally be avoided by opening the **PSS** and disabling PSS communication. During the early-game Route 101 starter sequence, however, the player does **not yet have access to the PSS**, so there is no normal in-game way to turn that communication off before starter automation begins.
+
+The ORAS `code.ips` patch removes/bypasses that communication-error interruption so Pokebot3DS-CFW can use remote controller input during those early hunts without the game stopping on the communication-error message.
+
+There are separate update-1.4 patches for each game:
+
+```text
+000400000011C400  -> Omega Ruby 1.4
+000400000011C500  -> Alpha Sapphire 1.4
+```
+
+The patch is **not** the RAM bridge and is **not** the input controller. It does not generate inputs, decide whether a Pokémon is shiny, change Pokémon data, alter shiny odds, modify encounter generation or provide a game-RAM write path. Its job is specifically to stop the ORAS communication-error path from interrupting automation when PSS communication cannot yet be disabled normally.
