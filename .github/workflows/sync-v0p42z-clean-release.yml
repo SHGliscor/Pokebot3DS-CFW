@@ -6,6 +6,12 @@ on:
       - sync-v0p42z-clean-release
     paths:
       - source_payload/v0p42Z/READY
+  pull_request:
+    branches:
+      - main
+    paths:
+      - source_payload/v0p42Z/READY
+      - .github/workflows/sync-v0p42z-clean-release.yml
 
 permissions:
   contents: write
