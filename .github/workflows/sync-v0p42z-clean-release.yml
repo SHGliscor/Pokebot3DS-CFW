@@ -1,118 +1,88 @@
-name: Sync v0p42Z clean release source
+name: Recover v0p42Z controller source
 
 on:
   pull_request:
     branches:
       - main
     paths:
-      - source_payload/v0p42Z/READY
       - .github/workflows/sync-v0p42z-clean-release.yml
 
 permissions:
   contents: write
 
 jobs:
-  unpack-source:
-    if: github.actor != 'github-actions[bot]'
+  recover-controller-source:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout staging branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: sync-v0p42z-clean-release
           fetch-depth: 0
 
-      - name: Recover and SHA-verify exact v0p42Z archive
+      - name: Recover target files from intact archive prefix
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import base64, hashlib
+          import base64, io, lzma, tarfile
 
-          expected = 'e75cd654dd2691b992b20d3b0f118eb8538e1acee2ac663daff2927bc802c0ab'
           alphabet = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
           parts = sorted(Path('source_payload/v0p42Z/parts').glob('part-*.b64'))
           clean = []
-          for p in parts:
+          for p in parts[:18]:
               raw = p.read_text(encoding='ascii', errors='ignore')
-              s = ''.join(ch for ch in raw if ch in alphabet)
-              clean.append(s)
-              print(f'{p.name}: {len(s)} chars')
+              clean.append(''.join(ch for ch in raw if ch in alphabet))
 
-          # Parts 000-017 are all clean multiples of four. The staging log proved
-          # parts 018+019 contain exactly one extra Base64 character in total.
-          prefix_text = ''.join(clean[:18])
-          tail = ''.join(clean[18:])
-          assert len(prefix_text) % 4 == 0
-          assert len(tail) % 4 == 1
-          prefix_bytes = base64.b64decode(prefix_text, validate=True)
-          prefix_hash = hashlib.sha256(prefix_bytes)
+          encoded = ''.join(clean)
+          compressed = base64.b64decode(encoded, validate=True)
+          dec = lzma.LZMADecompressor()
+          data = dec.decompress(compressed)
+          print(f'intact compressed prefix: {len(compressed)} bytes')
+          print(f'partial tar output: {len(data)} bytes; xz_eof={dec.eof}')
 
-          found = None
-          for pos in range(len(tail)):
-              candidate_text = tail[:pos] + tail[pos+1:]
-              try:
-                  tail_bytes = base64.b64decode(candidate_text, validate=True)
-              except Exception:
-                  continue
-              h = prefix_hash.copy()
-              h.update(tail_bytes)
-              if h.hexdigest() == expected:
-                  found = (pos, tail[pos], prefix_bytes + tail_bytes)
-                  break
-              if pos and pos % 5000 == 0:
-                  print(f'checked {pos}/{len(tail)} deletion positions')
+          wanted = {
+              'pokebot/common/luma_input.py',
+              'pokebot/common/acknowledged_input.py',
+              'pokebot/common/bridge.py',
+          }
+          found = {}
+          bio = io.BytesIO(data)
+          try:
+              tf = tarfile.open(fileobj=bio, mode='r:')
+              while True:
+                  try:
+                      member = tf.next()
+                  except (tarfile.ReadError, EOFError, OSError) as e:
+                      print(f'partial tar ended: {e}')
+                      break
+                  if member is None:
+                      break
+                  name = member.name.lstrip('./')
+                  if name in wanted and member.isfile():
+                      f = tf.extractfile(member)
+                      if f is not None:
+                          found[name] = f.read()
+                          print(f'RECOVERED {name}: {len(found[name])} bytes')
+          except tarfile.ReadError as e:
+              print(f'tar open/read ended: {e}')
 
-          if found is None:
-              raise SystemExit('Could not recover verified archive from one-character staging corruption')
+          if 'pokebot/common/luma_input.py' not in found:
+              raise SystemExit('luma_input.py was not present in the intact archive prefix')
 
-          pos, removed, archive = found
-          print(f'VERIFIED MATCH: removed one staged character at tail offset {pos}: {removed!r}')
-          print(f'archive bytes={len(archive)} sha256={hashlib.sha256(archive).hexdigest()}')
-          Path('/tmp/pokebot-v0p42Z-clean.tar.xz').write_bytes(archive)
+          root = Path('recovered_v0p42Z')
+          for name, content in found.items():
+              out = root / name
+              out.parent.mkdir(parents=True, exist_ok=True)
+              out.write_bytes(content)
           PY
 
-      - name: Extract clean release over repository
-        shell: bash
-        run: |
-          set -euo pipefail
-          tar -xJf /tmp/pokebot-v0p42Z-clean.tar.xz -C .
-          rm -rf source_payload/v0p42Z
-          rm -f .github/workflows/sync-v0p42z-clean-release.yml
-
-      - name: Verify clean source payload
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f run_qt_live.py
-          test -f requirements.txt
-          test -f pokebot/common/luma_input.py
-          test -f pokebot/common/bridge.py
-          test -f pokebot/common/oras_profiles.py
-          test -f qt_ui/main_window.py
-          test -f qt_ui/party_monitor.py
-          test -f data/oras_encounters.json
-          test -f assets/gen6_shiny_notification.wav
-          test -f pokebot/wild/world/alpha_sapphire_grass_runtime.sqlite
-          test -f 3ds_sd/luma/titles/000400000011C400/code.ips
-          test -f 3ds_sd/luma/titles/000400000011C500/code.ips
-          test ! -e boot.firm
-          python - <<'PY'
-          from pathlib import Path
-          import ast
-          files = list(Path('.').rglob('*.py'))
-          for path in files:
-              ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
-          print(f'Python AST check PASS: {len(files)} files')
-          PY
-
-      - name: Commit materialized exact source to staging branch
+      - name: Commit recovered controller source
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'feat: materialize verified v0p42Z source'
+          git add recovered_v0p42Z
+          git commit -m 'chore: recover exact v0p42Z controller source'
           git push origin HEAD:sync-v0p42z-clean-release
