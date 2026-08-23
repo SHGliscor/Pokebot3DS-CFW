@@ -17,11 +17,7 @@
   <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/network/members"><img src="https://img.shields.io/github/forks/SHGliscor/Pokebot3DS-CFW?style=flat-square" alt="GitHub forks"></a>
 </p>
 
----
 
-- [Wiki Home](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki)
-
----
 
 ### Inspiration
 
