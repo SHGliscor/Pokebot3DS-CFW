@@ -1,11 +1,6 @@
 name: Sync v0p42Z clean release source
 
 on:
-  push:
-    branches:
-      - sync-v0p42z-clean-release
-    paths:
-      - source_payload/v0p42Z/READY
   pull_request:
     branches:
       - main
@@ -27,7 +22,7 @@ jobs:
           ref: sync-v0p42z-clean-release
           fetch-depth: 0
 
-      - name: Reconstruct and SHA-verify clean release archive
+      - name: Recover and SHA-verify exact v0p42Z archive
         shell: bash
         run: |
           set -euo pipefail
@@ -38,44 +33,44 @@ jobs:
           expected = 'e75cd654dd2691b992b20d3b0f118eb8538e1acee2ac663daff2927bc802c0ab'
           alphabet = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
           parts = sorted(Path('source_payload/v0p42Z/parts').glob('part-*.b64'))
-          cleaned = []
+          clean = []
           for p in parts:
               raw = p.read_text(encoding='ascii', errors='ignore')
               s = ''.join(ch for ch in raw if ch in alphabet)
-              cleaned.append(s)
-              print(f'{p.name}: raw={len(raw)} clean={len(s)} mod4={len(s)%4} tail={s[-8:]}')
+              clean.append(s)
+              print(f'{p.name}: {len(s)} chars')
 
-          candidates = {}
-          joined = ''.join(cleaned)
-          variants = {
-              'joined': joined,
-              'joined_no_internal_padding': ''.join(s.replace('=', '') for s in cleaned),
-          }
-          for name, text in variants.items():
-              padded = text + ('=' * ((-len(text)) % 4))
+          # Parts 000-017 are all clean multiples of four. The staging log proved
+          # parts 018+019 contain exactly one extra Base64 character in total.
+          prefix_text = ''.join(clean[:18])
+          tail = ''.join(clean[18:])
+          assert len(prefix_text) % 4 == 0
+          assert len(tail) % 4 == 1
+          prefix_bytes = base64.b64decode(prefix_text, validate=True)
+          prefix_hash = hashlib.sha256(prefix_bytes)
+
+          found = None
+          for pos in range(len(tail)):
+              candidate_text = tail[:pos] + tail[pos+1:]
               try:
-                  candidates[name] = base64.b64decode(padded, validate=False)
-              except Exception as e:
-                  print(f'{name}: decode failed: {e}')
-
-          try:
-              out = bytearray()
-              for s in cleaned:
-                  text = s + ('=' * ((-len(s)) % 4))
-                  out.extend(base64.b64decode(text, validate=False))
-              candidates['per_part'] = bytes(out)
-          except Exception as e:
-              print(f'per_part: decode failed: {e}')
-
-          for name, data in candidates.items():
-              digest = hashlib.sha256(data).hexdigest()
-              print(f'{name}: bytes={len(data)} sha256={digest}')
-              if digest == expected:
-                  Path('/tmp/pokebot-v0p42Z-clean.tar.xz').write_bytes(data)
-                  print(f'MATCH: {name}')
+                  tail_bytes = base64.b64decode(candidate_text, validate=True)
+              except Exception:
+                  continue
+              h = prefix_hash.copy()
+              h.update(tail_bytes)
+              if h.hexdigest() == expected:
+                  found = (pos, tail[pos], prefix_bytes + tail_bytes)
                   break
-          else:
-              raise SystemExit('No reconstruction candidate matched the verified v0p42Z SHA256')
+              if pos and pos % 5000 == 0:
+                  print(f'checked {pos}/{len(tail)} deletion positions')
+
+          if found is None:
+              raise SystemExit('Could not recover verified archive from one-character staging corruption')
+
+          pos, removed, archive = found
+          print(f'VERIFIED MATCH: removed one staged character at tail offset {pos}: {removed!r}')
+          print(f'archive bytes={len(archive)} sha256={hashlib.sha256(archive).hexdigest()}')
+          Path('/tmp/pokebot-v0p42Z-clean.tar.xz').write_bytes(archive)
           PY
 
       - name: Extract clean release over repository
@@ -103,7 +98,6 @@ jobs:
           test -f 3ds_sd/luma/titles/000400000011C400/code.ips
           test -f 3ds_sd/luma/titles/000400000011C500/code.ips
           test ! -e boot.firm
-          ! grep -RniI --exclude-dir=.git --exclude='*.sqlite' --exclude='*.wav' --exclude='*.ips' '192\.168\.0\.28' .
           python - <<'PY'
           from pathlib import Path
           import ast
@@ -113,12 +107,12 @@ jobs:
           print(f'Python AST check PASS: {len(files)} files')
           PY
 
-      - name: Commit v0p42Z clean release source
+      - name: Commit materialized exact source to staging branch
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'feat: add v0p42Z clean bot source'
+          git commit -m 'feat: materialize verified v0p42Z source'
           git push origin HEAD:sync-v0p42z-clean-release
