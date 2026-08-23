@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - source_payload/v0p42Z/READY
       - .github/workflows/sync-v0p42z-clean-release.yml
 
 permissions:
@@ -25,7 +26,6 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-
           path = Path('recovered_v0p42Z/pokebot/common/luma_input.py')
           text = path.read_text(encoding='utf-8')
           old = """        interval = max(0.010, min(0.100, float(poll_ms) / 1000.0))
@@ -88,10 +88,8 @@ jobs:
                 'raw_hid': current['raw_hid'],
             })
 """
-          if old not in text:
-              raise SystemExit('target _wait_terminal block not found exactly; refusing broad patch')
-          if text.count(old) != 1:
-              raise SystemExit('target _wait_terminal block was not unique; refusing broad patch')
+          if old not in text or text.count(old) != 1:
+              raise SystemExit('exact _wait_terminal target not found uniquely; refusing patch')
           path.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
 
@@ -101,59 +99,31 @@ jobs:
           set -euo pipefail
           python -m py_compile recovered_v0p42Z/pokebot/common/luma_input.py
           PYTHONPATH=recovered_v0p42Z python - <<'PY'
-          from pokebot.common.luma_input import (
-              LumaInputTransport, LumaInputError,
-              INPUT_STATE_ACCEPTED, INPUT_STATE_COMPLETED,
-          )
-
-          def accepted():
-              return {
-                  'sequence': 123,
-                  'state': INPUT_STATE_ACCEPTED,
-                  'state_name': 'ACCEPTED',
-                  'raw_hid': 0xFFE,
-                  'remaining_ms': 0,
-                  'runtime_flags': 1,
-                  'acknowledged': True,
-              }
-
+          from pokebot.common.luma_input import LumaInputTransport, LumaInputError, INPUT_STATE_ACCEPTED, INPUT_STATE_COMPLETED
+          initial = {'sequence':123,'state':INPUT_STATE_ACCEPTED,'state_name':'ACCEPTED','raw_hid':0xFFE,'remaining_ms':0,'runtime_flags':1,'acknowledged':True}
           t = LumaInputTransport('127.0.0.1', timeout=0.1)
-          calls = []
-          responses = [LumaInputError('Pokebot-Luma UDP/4952 timeout after 2 attempt(s)'), {
-              'sequence': 123,
-              'state': INPUT_STATE_COMPLETED,
-              'state_name': 'COMPLETED',
-              'raw_hid': 0xFFF,
-              'remaining_ms': 0,
-              'runtime_flags': 1,
-              'acknowledged': True,
-          }]
-          def fake_status(sequence):
-              calls.append(sequence)
-              item = responses.pop(0)
-              if isinstance(item, Exception):
-                  raise item
+          calls=[]
+          replies=[LumaInputError('Pokebot-Luma UDP/4952 timeout after 2 attempt(s)'), {'sequence':123,'state':INPUT_STATE_COMPLETED,'state_name':'COMPLETED','raw_hid':0xFFF,'remaining_ms':0,'runtime_flags':1,'acknowledged':True}]
+          def fake_status(seq):
+              calls.append(seq); item=replies.pop(0)
+              if isinstance(item, Exception): raise item
               return item
-          t._status = fake_status
-          t.release_all = lambda *a, **k: None
-          result = t._wait_terminal(123, accepted(), hold_ms=1, settle_ms=1, poll_ms=10)
-          assert result['state'] == INPUT_STATE_COMPLETED
-          assert calls == [123, 123], calls
-          assert any(s.get('event') == 'STATUS_TIMEOUT' for s in result['samples'])
+          t._status=fake_status; t.release_all=lambda *a,**k: None
+          result=t._wait_terminal(123, initial, hold_ms=1, settle_ms=1, poll_ms=10)
+          assert result['state']==INPUT_STATE_COMPLETED
+          assert calls==[123,123]
+          assert any(s.get('event')=='STATUS_TIMEOUT' for s in result['samples'])
           t.close()
-          print('PASS: transient status loss recovers on same gameplay sequence')
+          print('PASS transient timeout -> same-sequence recovery')
 
-          t = LumaInputTransport('127.0.0.1', timeout=0.1)
-          t._status = lambda sequence: (_ for _ in ()).throw(LumaInputError('INPUT_STATUS protocol failure'))
-          t.release_all = lambda *a, **k: None
-          try:
-              t._wait_terminal(321, accepted(), hold_ms=1, settle_ms=1, poll_ms=10)
-          except LumaInputError as exc:
-              assert 'protocol failure' in str(exc)
-          else:
-              raise AssertionError('non-timeout transport error was incorrectly swallowed')
+          t=LumaInputTransport('127.0.0.1', timeout=0.1)
+          t._status=lambda seq: (_ for _ in ()).throw(LumaInputError('INPUT_STATUS protocol failure'))
+          t.release_all=lambda *a,**k: None
+          try: t._wait_terminal(321, initial, hold_ms=1, settle_ms=1, poll_ms=10)
+          except LumaInputError as exc: assert 'protocol failure' in str(exc)
+          else: raise AssertionError('non-timeout failure swallowed')
           t.close()
-          print('PASS: non-timeout transport errors still fail closed')
+          print('PASS non-timeout failure remains fail-closed')
           PY
 
       - name: Commit tested hotfix
