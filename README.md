@@ -40,32 +40,32 @@ These percentages are **development estimates, not automated code coverage**. Th
 
 ### Overall ORAS roadmap
 
-**70%**
+**75%**
 
 ```text
-██████████████░░░░░░ 70%
+███████████████░░░░░ 75%
 ```
 
 | ORAS section | Progress | Current status |
 |---|---|---|
-| CFW / RAM / input bridge | `████████████████████` **100%** | Pokebot-Luma read-only RAM bridge + additive Luma input path hardware-proven |
-| Hoenn starter automation | `████████████████████` **100%** | Treecko, Torchic, Mudkip + Random mode operational |
-| Grass Wild automation | `███████████████████░` **95%** | RAM-authoritative encounter loop, terrain containment and automatic Run proven; integrated Luma regression testing continues |
-| Horde automation | `████████████████░░░░` **80%** | Natural and Sweet Scent Horde work implemented/hardware-tested in Alpha Sapphire; wider OR parity remains |
-| Cave automation | `████████████████░░░░` **80%** | Cave hunting with Walk/Run/Acro Bunny hardware-tested in Alpha Sapphire; wider OR parity remains |
-| Surf / Ocean automation | `████████████████░░░░` **80%** | Surf/Ocean hunting path implemented and hardware-tested in development; wider OR parity remains |
-| Encounter / terrain DB + browser | `███████████████████░` **95%** | Whole-game ORAS encounter/terrain data and HUNTS browser are live; edge-case coverage continues |
-| Dashboard / HUNTS | `██████████████████░░` **90%** | Main hunting workflow and encounter browser are live |
-| STATS / history | `█████████████████░░░` **85%** | Persistent encounters, phase/lifetime analytics, extrema and history implemented; polish remains |
-| TOOLS / support | `███████████████░░░░░` **75%** | Diagnostics/support design and support ZIP workflow implemented; some utilities remain unfinished |
-| Discord notifications / Rich Presence | `████████████████░░░░` **80%** | Discord bot notifications and Rich Presence work implemented; further event/media wiring remains |
-| Direct 3DS screenshot pipeline | `██████████░░░░░░░░░░` **50%** | PC image pipeline exists; direct framebuffer transport is not yet implemented in Pokebot-Luma v0p4 |
-| Block list | `████████████████░░░░` **80%** | Block-list feature is present; further documentation/polish remains |
-| Fishing | `████░░░░░░░░░░░░░░░░` **20%** | Encounter data/browser support exists; production automation remains |
-| Static encounters | `██░░░░░░░░░░░░░░░░░░` **10%** | Planned after the currently proven starter/Wild foundations |
+| CFW / RAM / input bridge | `████████████████████` **100%** | Pokebot-Luma read-only RAM bridge + acknowledged controller hardware-proven; retained HID latch, touch pulse and emergency release are working on real hardware |
+| Hoenn starter automation | `████████████████████` **100%** | Treecko, Torchic, Mudkip + Random mode operational; current acknowledged-controller reset path is hardware-proven |
+| Grass Wild automation | `████████████████████` **100%** | RAM-authoritative encounter loop, terrain containment, current controller movement and automatic Run are operational; wider OR regression sweep is still planned |
+| Horde automation | `███████████████████░` **95%** | Natural and Sweet Scent Horde automation is implemented/hardware-tested in Alpha Sapphire, including post-battle re-arm; OR parity remains |
+| Cave automation | `███████████████████░` **95%** | Cave Walk/Run/Acro Bunny are hardware-tested in Alpha Sapphire with stable-grid authority, longer Run bursts and post-battle re-arm; OR parity remains |
+| Surf / Ocean automation | `██████████████████░░` **90%** | Surf/Ocean hunting path is implemented and hardware-tested in development; wider OR parity remains |
+| Encounter / terrain DB + browser | `████████████████████` **100%** | Whole-game ORAS encounter/terrain data and HUNTS browser are live, including environment-specific encounter tables |
+| Dashboard / HUNTS | `███████████████████░` **95%** | Main hunting workflow and encounter browser are live; Party Pokémon live-order refresh remains a known display issue |
+| STATS / history | `██████████████████░░` **90%** | Persistent encounters, phase/lifetime analytics, extrema and history are implemented; polish remains |
+| TOOLS / support | `██████████████████░░` **90%** | Diagnostics/support design, hardware controller testing and support ZIP workflow are implemented and actively used for regression evidence |
+| Discord notifications / Rich Presence | `█████████████████░░░` **85%** | Discord bot notifications and Rich Presence are implemented; further event/media wiring remains |
+| Direct 3DS screenshot pipeline | `██████████░░░░░░░░░░` **50%** | PC image pipeline exists; direct framebuffer transport is not yet implemented in the current Pokebot-Luma bridge |
+| Block list | `██████████████████░░` **90%** | Block-list feature is present and integrated with keeper/continuation policy; documentation/polish remains |
+| Fishing | `████░░░░░░░░░░░░░░░░` **20%** | Encounter data/browser support exists; production Fishing and Chain Fishing automation remain |
+| Static encounters | `██████░░░░░░░░░░░░░░` **30%** | Previous ORAS choreography exists for multiple static/portal targets; current RAM-authoritative production engine is not yet wired |
 | Postgame starters | `███░░░░░░░░░░░░░░░░░` **15%** | Johto/Unova/Sinnoh starters are in the browser; automation is not yet wired |
 | Language validation | `███░░░░░░░░░░░░░░░░░` **15%** | English hardware-verified; other game languages remain unverified |
-| Release / docs | `██████████████████░░` **90%** | README/setup/release structure largely complete; documentation follows development |
+| Release / docs | `███████████████████░` **95%** | README/setup/release structure is largely complete and is being kept current alongside development |
 
 The percentages should move only when a section gains real implementation, hardware proof, production integration or required parity—not simply because code was written.
 
@@ -111,6 +111,8 @@ Thank you to everyone who tests the bot, reports bugs, provides feedback, or sim
 > **Pokebot3DS-CFW currently targets Pokémon Omega Ruby 1.4 and Pokémon Alpha Sapphire 1.4 on real 3DS hardware.**
 >
 > English is the currently hardware-verified game language. Other languages remain unverified until separately tested.
+>
+> **Current controller update:** newer acknowledged-controller builds place RAM and acknowledged input commands on **UDP 4952**. The older v0p4 `4952 RAM + 4950 InputRedirection` description is retained below as project/setup history, but current development packages use the acknowledged controller path described in the August 23 update section.
 
 Pokebot3DS-CFW is a Windows Qt application paired with **Pokebot-Luma**, a Luma3DS-derived `boot.firm` containing the Pokebot-specific Rosalina bridge.
 
@@ -135,6 +137,13 @@ The following has been proven on real Alpha Sapphire 1.4 hardware:
 - Alpha Sapphire is correctly identified as `000400000011C500 / sango-2`.
 - A real `wild/opponent0` PK6 at `0x081FFA6C` was read, decrypted and checksum-validated.
 - The hardware proof PK6 was species **#293 Whismur**, non-shiny, with a matching `0xEC9C` checksum.
+
+Additional current acknowledged-controller proof:
+
+- `INPUT_PING`, acknowledged pulse, status, emergency `RELEASE_ALL`, native touch pulse and retained HID latch are hardware-proven on UDP `4952`.
+- The tested controller reports protocol v1, capability flags `0x000000CF`, runtime `0x00000001`, neutral HID `0xFFF`, and bounded hold/settle limits.
+- The retained reset chord `L + R + START + SELECT` is sent as a latched active-low HID value and explicitly released, removing the unreliable short-pulse reset behaviour seen during migration.
+- Current starter regression runs completed repeated first-attempt resets without the earlier reset-chord misses.
 
 ---
 
@@ -262,6 +271,23 @@ The standalone real-hardware proof has confirmed remote A, remote START and phys
 
 This separation is intentional: **RAM tells the bot what happened; controller/touch input tells the game what to do next.** RAM is never written to in order to force a hunt result.
 
+### Current acknowledged controller path
+
+The newer controller path is additive to the read-only bridge protocol and is the active path in current development builds. It uses the same UDP `4952` service as RAM authority while preserving the rule that game RAM remains read-only.
+
+Current acknowledged input commands are:
+
+```text
+5  INPUT_PING
+6  INPUT_PULSE
+7  INPUT_STATUS
+8  RELEASE_ALL
+9  INPUT_TOUCH_PULSE
+10 INPUT_HID_LATCH
+```
+
+The retained HID latch is used for inputs that must remain physically present long enough for ORAS to recognise them reliably, most importantly the reset chord. `RELEASE_ALL` is always available as an explicit neutralisation path.
+
 ---
 
 ## Current validated ORAS support
@@ -285,8 +311,13 @@ This separation is intentional: **RAM tells the bot what happened; controller/to
 | Discord notifications / Rich Presence | ✅ Implemented | ✅ Shared PC feature |
 | Direct top-screen framebuffer capture | 🟡 PC pipeline retained; Pokebot-Luma transport pending | 🟡 Same |
 | Block list | ✅ Implemented | ✅ Shared PC feature |
+| Acknowledged controller / retained HID latch | ✅ Hardware-proven | ✅ Shared controller path proven through OR starter/reset testing |
+| Native touch pulse on current controller | ✅ Hardware-proven | 🟡 Wider hunt-method parity pass pending |
+| Party Pokémon live dashboard order | 🟡 Pokémon data reads correctly, but manual party reordering may not refresh until the game is restarted | 🟡 Same display-only subsystem; hunt shiny authority is unaffected |
 
 Omega Ruby completed the finite automated starter reset validation **6/6**, including two successful cycles for each Hoenn starter. The three locked starter modules are shared between the two ORAS profiles rather than duplicated.
+
+Current acknowledged-controller starter regression has also produced repeated first-attempt reset success on the retained reset chord. Treecko received a targeted early-battle probe timing improvement while preserving the same final RAM authority boundary.
 
 ---
 
@@ -393,6 +424,9 @@ RAM bridge:       UDP 4952
 Input controller: UDP 4950
 ```
 
+> [!NOTE]
+> The networking block immediately above documents the earlier v0p4 split transport. Current acknowledged-controller development builds use UDP `4952` for both read-only RAM requests and acknowledged controller commands while keeping the two responsibilities logically separate.
+
 The `code.ips` files are separate game patches; they are not the controller.
 
 Pokebot-Luma is a modified Luma3DS build. The package includes the relevant Luma3DS license and source patch scripts, and the upstream Luma3DS commit used for this build is recorded in the packaged source notes.
@@ -459,16 +493,33 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - [x] block-list feature
 - [x] persistent stats/history and shiny phase tracking
 - [x] support ZIP export
+- [x] acknowledged controller protocol on UDP 4952 (`INPUT_PING`, pulse, status, release, touch, retained HID latch)
+- [x] retained HID reset chord + explicit release
+- [x] current-controller Hoenn starter regression across Treecko/Torchic/Mudkip
+- [x] Treecko early-battle timing tune without moving the RAM authority deadline
+- [x] current-controller native touch pulse used by hunt actions
+- [x] Horde post-battle Sweet Scent re-arm
+- [x] Cave stable-grid authority for areas where duplicate world coordinates are not land-style settled
+- [x] Cave Run longer 600 ms B+direction movement with locally proven corridor envelope
+- [x] Cave Run post-battle re-arm
+- [x] Cave Acro Bunny initial/post-battle re-arm
+- [x] Birch bag reset false-hold tolerance for an explicitly zero secondary coordinate copy
+- [x] Party monitor isolated into display-only refresh/discovery work so it cannot affect hunt shiny authority
 - [ ] integrated Pokebot-Luma short Wild regression
 - [ ] integrated Pokebot-Luma starter endurance regression
-- [ ] revalidate remote touchscreen hunt actions through Pokebot-Luma
 - [ ] add Pokebot-Luma direct framebuffer transport for Discord screenshots
-- [ ] Omega Ruby-specific Horde/Cave/Surf hardware parity
+- [ ] Omega Ruby-specific Horde/Cave/Surf hardware parity on the current controller path
+- [ ] live Party Pokémon order refresh without restarting ORAS
 - [ ] Johto postgame starter automation
 - [ ] Unova postgame starter automation
 - [ ] Sinnoh postgame starter automation
 - [ ] Surf/Fishing production automation
-- [ ] static encounter production automation
+- [ ] Chain Fishing production automation
+- [ ] static encounter / portal production automation
+- [ ] DexNav hunt automation
+- [ ] Rock Smash production automation
+- [ ] shared shiny Auto Capture engine
+- [ ] Horde shiny Auto Capture front-end that protects the shiny slot before capture
 
 ### Later games
 - [ ] Pokémon X / Y
@@ -489,6 +540,9 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - ✅ Pokebot-Luma / Luma3DS-derived Pokebot bridge
 - ✅ UDP 4952 read-only RAM bridge
 - ✅ UDP 4950 additive button input
+- ✅ UDP 4952 acknowledged controller path in current development builds
+- ✅ retained HID reset chord / explicit release
+- ✅ native acknowledged touchscreen pulse
 - ✅ Windows Qt dashboard
 
 ### Not claimed yet
@@ -498,6 +552,9 @@ The encounter browser's per-species shiny totals are stored persistently, allowi
 - ❌ production postgame Johto/Unova/Sinnoh starter automation
 - ❌ production static hunts
 - ❌ production Fishing
+- ❌ production DexNav automation
+- ❌ production Auto Capture
+- ❌ fully live Party Pokémon dashboard order after an in-game reorder
 - ❌ XY / Gen 7 production support
 
 ---
@@ -662,3 +719,148 @@ SETTINGS  = configure the bot
 ```
 
 The underlying safety model remains unchanged: **RAM is authoritative, no RAM writes are used for shiny decisions, and invalid state means HOLD rather than blind continuation.**
+
+---
+
+## August 23, 2026 — current hardware state and fixes
+
+This section is additive to the development history above. It records the newer acknowledged-controller migration and the current `v0p42Z` desktop baseline without removing the earlier v0p4 history.
+
+### Acknowledged controller migration
+
+The desktop bot has moved from fire-and-forget input toward an acknowledged Pokebot-Luma controller on UDP `4952`.
+
+The current protocol keeps RAM read-only while adding controller-only commands for pulse, status, emergency release, native touch and retained HID latch. The retained latch is especially important for the ORAS reset chord because the game must observe `L + R + START + SELECT` long enough to trigger a reliable reset.
+
+The migration initially exposed a real problem: an acknowledged short reset pulse could be accepted by the firmware without producing a game-level reset. The reset path was therefore changed to:
+
+```text
+pre-neutral
+→ INPUT_HID_LATCH(reset chord)
+→ retain chord
+→ RELEASE_ALL
+→ verify game/PID transition
+```
+
+That change removed the earlier reset-chord misses in targeted starter validation.
+
+### Current Hoenn starter reliability
+
+The three starter modules remain intentionally frozen as separate proven pieces rather than being merged into one giant macro.
+
+Recent acknowledged-controller hardware validation included repeated first-attempt reset cycles for all three starters. Treecko also received a narrow timing improvement that moved its early battle probe forward while preserving the original final RAM authority deadline.
+
+Observed development timing remains approximately:
+
+- Torchic: ~35.5 s/reset
+- Mudkip: ~36.7 s/reset
+- Treecko: ~37.3 s/reset after the targeted early-battle tune
+
+These are observed development rates, not guaranteed hardware performance.
+
+### Birch bag false-HOLD fix
+
+A reset regression was found where the game was already at Professor Birch's bag but the secondary world-coordinate copy temporarily reported exactly `[0.0, 0.0]`.
+
+The reset validator now accepts that narrow state only when all of the following are true:
+
+- battle is inactive
+- the correct Route 101/Birch zone is present
+- the primary world coordinate is exactly the proven bag coordinate
+- the secondary coordinate is either the same proven coordinate or explicitly all-zero
+
+A non-zero conflicting secondary coordinate still fails closed.
+
+### Horde post-battle re-arm
+
+Sweet Scent Horde automation now performs an explicit post-battle field re-arm before opening the menu for the next Sweet Scent use.
+
+The re-arm waits for field authority, allows the game to settle, then confirms battle inactivity and the same validated grid before continuing. This fixed the earlier tendency to act too quickly immediately after returning from a Horde battle.
+
+### Cave stable-grid authority
+
+Fiery Path testing showed that cave movement cannot always use the exact same land-style `settled_tile_center` rule as outdoor grass.
+
+Cave authority now uses:
+
+- exact zone
+- duplicate-coordinate agreement where valid
+- repeated logical-grid stability
+- land-style tile-centre settle as diagnostic rather than mandatory authority
+
+This removed false preflight HOLDs before cave movement had even started.
+
+### Cave Run movement length and corridor proof
+
+The initial Cave Run implementation was visually too short, often producing only roughly three steps at a time, and could false-HOLD after returning from battle.
+
+The newer Cave Run path now locally proves a wider corridor around its anchor before using the longer movement burst. Once that local envelope is proven, the normal long action uses a `600 ms` B+direction hold and accepts the resulting movement only when the RAM endpoint remains inside the previously proven corridor.
+
+A post-battle re-arm also waits for the cave field to settle before the next movement action. Blind movement retransmission is not used.
+
+### Cave Acro Bunny re-arm
+
+Cave Acro Bunny retains its proven stationary B-latch behaviour, but now performs explicit initial and post-battle re-arm checks before latching B again.
+
+The re-arm requires battle inactivity and the same anchor grid. The actual retained-B input pattern remains unchanged.
+
+### Party Pokémon panel — current known issue
+
+The Party Pokémon dashboard has been isolated from hunt authority and rewritten several times as a display-only monitor.
+
+What is already proven:
+
+- the bot can read valid party PK6 data
+- species/identity data is correct
+- the dashboard can populate the six party cards
+- multiple stale/cached party copies and candidate runtime structures have been identified
+
+The remaining issue is **live party order**. If Pokémon are manually reordered in the ORAS party menu, the dashboard may continue showing the previous order until the game is closed/reopened. That strongly indicates the display monitor is still not following the exact runtime order structure that ORAS updates immediately in-menu.
+
+This is deliberately treated as a **UI/display issue only**. Starter shiny authority, Wild shiny authority, Horde authority, Cave authority, Pokérus safety and the reset controller do not depend on the Party panel's visible ordering.
+
+The rest of the current Alpha Sapphire validation is considered stable enough to freeze while Party work remains isolated.
+
+### Omega Ruby parity pass next
+
+The next broad hardware validation is an Omega Ruby pass across the already-implemented non-starter hunt methods, especially:
+
+- normal Wild Walk/Run
+- Hordes and Sweet Scent Hordes
+- Cave Walk/Run/Acro Bunny
+- Surf/Ocean
+
+The purpose is parity validation, not redesign. Alpha Sapphire-proven behaviour should remain frozen unless Omega Ruby produces specific evidence of a game-profile difference.
+
+### Remaining ORAS hunt families
+
+After current OR/AS parity is frozen, the main production hunt families still to build or port are:
+
+- Fishing and Chain Fishing
+- Static encounters
+- Mirage Spot / portal legendaries
+- Johto / Unova / Sinnoh postgame starters
+- DexNav
+- Rock Smash
+- selected gift/fossil reset hunts
+
+Previous image-era ORAS work already developed successful choreography for several static/portal targets, including Spiritomb, Kecleon, Regirock, Regice, Registeel, Heatran, Reshiram, Zekrom, Terrakion and Virizion. That choreography can be reused while replacing visual shiny authority with the current RAM-authoritative PK6 decision.
+
+### Auto Capture — planned shared subsystem
+
+Auto Capture is planned as a shared subsystem rather than a separate macro for every hunt method.
+
+The intended safety rule is:
+
+```text
+RAM proves keeper shiny
+→ normal hunt continuation is disabled
+→ capture target is locked by species/PID/EC
+→ capture controller acts only while that identity remains valid
+→ confirmed catch stops the hunt
+→ any uncertainty falls back to SHINY HOLD
+```
+
+Single-opponent capture will be developed first. Horde capture will use a specialised front-end that protects the shiny Horde slot, removes only validated non-shiny opponents, then hands the surviving shiny to the same shared capture engine.
+
+Auto Capture is **not yet production implemented** and is not counted as completed work in the progress table.
