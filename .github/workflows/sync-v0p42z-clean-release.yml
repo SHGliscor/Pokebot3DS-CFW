@@ -1,0 +1,74 @@
+name: Sync v0p42Z clean release source
+
+on:
+  push:
+    branches:
+      - sync-v0p42z-clean-release
+    paths:
+      - source_payload/v0p42Z/READY
+
+permissions:
+  contents: write
+
+jobs:
+  unpack-source:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: sync-v0p42z-clean-release
+          fetch-depth: 0
+
+      - name: Reconstruct verified clean release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat source_payload/v0p42Z/parts/part-*.b64 > /tmp/pokebot-v0p42Z-clean.tar.xz.b64
+          base64 --decode /tmp/pokebot-v0p42Z-clean.tar.xz.b64 > /tmp/pokebot-v0p42Z-clean.tar.xz
+          echo 'e75cd654dd2691b992b20d3b0f118eb8538e1acee2ac663daff2927bc802c0ab  /tmp/pokebot-v0p42Z-clean.tar.xz' | sha256sum -c -
+
+      - name: Extract clean release over repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xJf /tmp/pokebot-v0p42Z-clean.tar.xz -C .
+          rm -rf source_payload/v0p42Z
+          rm -f .github/workflows/sync-v0p42z-clean-release.yml
+
+      - name: Verify clean source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f run_qt_live.py
+          test -f requirements.txt
+          test -f pokebot/common/bridge.py
+          test -f pokebot/common/oras_profiles.py
+          test -f qt_ui/main_window.py
+          test -f qt_ui/party_monitor.py
+          test -f data/oras_encounters.json
+          test -f assets/gen6_shiny_notification.wav
+          test -f pokebot/wild/world/alpha_sapphire_grass_runtime.sqlite
+          test -f 3ds_sd/luma/titles/000400000011C400/code.ips
+          test -f 3ds_sd/luma/titles/000400000011C500/code.ips
+          test ! -e boot.firm
+          ! grep -RniI --exclude-dir=.git --exclude='*.sqlite' --exclude='*.wav' --exclude='*.ips' '192\.168\.0\.28' .
+          python - <<'PY'
+          from pathlib import Path
+          import ast
+          files = list(Path('.').rglob('*.py'))
+          for path in files:
+              ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
+          print(f'Python AST check PASS: {len(files)} files')
+          PY
+
+      - name: Commit v0p42Z clean release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: add v0p42Z clean bot source'
+          git push origin HEAD:sync-v0p42z-clean-release
