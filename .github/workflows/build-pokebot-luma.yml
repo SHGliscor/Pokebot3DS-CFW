@@ -62,7 +62,7 @@ jobs:
           grep -q 'POKEBOT_BRIDGE_PRIORITY, CORE_SYSTEM' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'diagnostics.bridgePriority = POKEBOT_BRIDGE_PRIORITY' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'diagnostics.consoleModel = isN3DS ? 2 : 1' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q 'POKEBOT_CMD_DIAGNOSTICS = 13' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_CMD_DIAGNOSTICS = 15' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_CMD_FRAMEBUFFER_INFO = 11' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_CMD_FRAMEBUFFER_READ = 12' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_INPUT_CAPS     0x000000CFUL' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
@@ -93,7 +93,7 @@ jobs:
           sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
           cat > artifact/FIRST_TEST.txt <<'EOF'
           Pokebot-Luma v0p7-runtime-diag
-          Command 13 reports the detected 3DS model, compiled bridge priority,
+          Command 15 reports the detected 3DS model, compiled bridge priority,
           idle yield, exact build ID, and controller-side HID write counters.
           New 3DS latency fix + framebuffer commands 11-12 are preserved.
           Commands 1-10 and RAM read-only authority are preserved.
