@@ -29,6 +29,7 @@ Pokebot3DS-CFW takes inspiration from excellent Pokémon automation projects inc
 
 Pokebot3DS-CFW is an independent implementation built around RAM-authoritative Gen 6 shiny hunting, 3DS input automation and real-hardware safety gates.
 
+*huge THANKYOU to moepunzie on the Pokebot-gen3 discord for helping me test the new 3ds side*
 ---
 
 ## 🤖 Project Transparency & Use of AI
