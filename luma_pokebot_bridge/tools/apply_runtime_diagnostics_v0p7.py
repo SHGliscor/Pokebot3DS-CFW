@@ -131,7 +131,7 @@ bridge = replace_once(
     bridge,
     "    POKEBOT_CMD_READ      = 4,\n",
     "    POKEBOT_CMD_READ        = 4,\n"
-    "    POKEBOT_CMD_DIAGNOSTICS = 13,\n",
+    "    POKEBOT_CMD_DIAGNOSTICS = 15,\n",
     "diagnostics command enum",
 )
 
