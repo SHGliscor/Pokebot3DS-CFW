@@ -9,7 +9,7 @@ on:
       - '.github/workflows/build-pokebot-luma-n3ds.yml'
   pull_request:
     branches:
-      - main
+      - pokebot-luma-v0p5-controller
     paths:
       - 'luma_pokebot_bridge/**'
       - '.github/workflows/build-pokebot-luma-n3ds.yml'
