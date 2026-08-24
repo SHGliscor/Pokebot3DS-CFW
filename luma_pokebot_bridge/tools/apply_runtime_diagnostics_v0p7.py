@@ -78,11 +78,13 @@ controller = replace_once(
 )
 controller = replace_once(
     controller,
-    "    sInput.deadlineMs = 0;\n"
+    "    sInput.kind = POKEBOT_KIND_HID_LATCH;\n"
+    "    sInput.phase = POKEBOT_PHASE_LATCHED;\n"
     "    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);\n"
     "    PokebotInput_SetRemoteHid(rawHid);\n"
     "    pokebotInputCommands++;\n",
-    "    sInput.deadlineMs = 0;\n"
+    "    sInput.kind = POKEBOT_KIND_HID_LATCH;\n"
+    "    sInput.phase = POKEBOT_PHASE_LATCHED;\n"
     "    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);\n"
     "    PokebotInput_SetRemoteHid(rawHid);\n"
     "    pokebotHidAssertWrites++;\n"
