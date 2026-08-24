@@ -118,7 +118,9 @@ if "POKEBOT_CMD_FRAMEBUFFER_INFO" not in text:
         marker,
         marker
         + "    POKEBOT_CMD_FRAMEBUFFER_INFO = 11,\n"
-        + "    POKEBOT_CMD_FRAMEBUFFER_READ = 12,\n",
+        + "    POKEBOT_CMD_FRAMEBUFFER_READ = 12,\n"
+        + "    POKEBOT_CMD_FRAMEBUFFER_SNAPSHOT = 13,\n"
+        + "    POKEBOT_CMD_FRAMEBUFFER_SNAPSHOT_READ = 14,\n",
         1,
     )
 
@@ -173,6 +175,24 @@ if "Pokebot_GetFramebufferInfo" not in text:
 #define POKEBOT_FB_FLAG_3D_ACTIVE  (1UL << 2)
 #define POKEBOT_FB_FLAG_BGR8       (1UL << 3)
 #define POKEBOT_FB_FLAG_LIVE       (1UL << 4)
+#define POKEBOT_FB_FLAG_FROZEN     (1UL << 5)
+
+/*
+ * Frozen snapshot storage. ORAS uses a normal 400x240 top framebuffer; bottom
+ * is 320x240. 800px wide mode remains available through legacy live reads but
+ * is deliberately rejected for frozen snapshots to keep this fixed BSS buffer
+ * bounded to 288 KiB.
+ */
+#define POKEBOT_FB_SNAPSHOT_MAX_WIDTH  400UL
+#define POKEBOT_FB_SNAPSHOT_HEIGHT     240UL
+#define POKEBOT_FB_SNAPSHOT_MAX_BYTES  (POKEBOT_FB_SNAPSHOT_MAX_WIDTH * POKEBOT_FB_SNAPSHOT_HEIGHT * 3UL)
+#define POKEBOT_FB_SNAPSHOT_MAX_CHUNK  (POKEBOT_FB_MAX_PIXELS * 3UL)
+
+static u8 pokebotFramebufferSnapshot[POKEBOT_FB_SNAPSHOT_MAX_BYTES];
+static u32 pokebotFramebufferSnapshotSize = 0;
+static u32 pokebotFramebufferSnapshotGeneration = 0;
+static PokebotFramebufferInfo pokebotFramebufferSnapshotInfo;
+static bool pokebotFramebufferSnapshotValid = false;
 
 static PokebotStatus Pokebot_GetFramebufferInfo(
     u32 selector,
@@ -242,6 +262,73 @@ static PokebotStatus Pokebot_ReadFramebufferSpan(
     return POKEBOT_STATUS_OK;
 }
 
+static PokebotStatus Pokebot_CaptureFramebufferSnapshot(
+    u32 selector,
+    PokebotFramebufferInfo *out,
+    u32 *generation)
+{
+    PokebotFramebufferInfo info;
+    PokebotStatus status = Pokebot_GetFramebufferInfo(selector, &info);
+    if (status != POKEBOT_STATUS_OK)
+        return status;
+
+    if (info.width == 0 || info.width > POKEBOT_FB_SNAPSHOT_MAX_WIDTH ||
+        info.height != POKEBOT_FB_SNAPSHOT_HEIGHT || info.bytesPerPixel != 3)
+        return POKEBOT_STATUS_FRAMEBUFFER_UNSUPPORTED;
+
+    u32 total = info.width * info.height * info.bytesPerPixel;
+    if (total == 0 || total > POKEBOT_FB_SNAPSHOT_MAX_BYTES)
+        return POKEBOT_STATUS_FRAMEBUFFER_UNSUPPORTED;
+
+    bool top = selector != POKEBOT_FB_BOTTOM;
+    bool left = selector != POKEBOT_FB_TOP_RIGHT;
+
+    /*
+     * One conversion call captures all 240 lines. Luma's conversion kernel
+     * resolves the selected physical framebuffer address once before its line
+     * loop, so the UDP client no longer samples a potentially different live
+     * framebuffer on every row.
+     */
+    Draw_Lock();
+    Draw_ConvertFrameBufferLines(
+        pokebotFramebufferSnapshot, info.width, 0, info.height, 1, top, left);
+    Draw_Unlock();
+
+    pokebotFramebufferSnapshotSize = total;
+    pokebotFramebufferSnapshotGeneration++;
+    if (pokebotFramebufferSnapshotGeneration == 0)
+        pokebotFramebufferSnapshotGeneration = 1;
+
+    pokebotFramebufferSnapshotInfo = info;
+    pokebotFramebufferSnapshotInfo.maxPixelsPerRead = POKEBOT_FB_SNAPSHOT_MAX_CHUNK;
+    pokebotFramebufferSnapshotInfo.flags &= ~POKEBOT_FB_FLAG_LIVE;
+    pokebotFramebufferSnapshotInfo.flags |= POKEBOT_FB_FLAG_FROZEN;
+    pokebotFramebufferSnapshotValid = true;
+
+    *out = pokebotFramebufferSnapshotInfo;
+    *generation = pokebotFramebufferSnapshotGeneration;
+    return POKEBOT_STATUS_OK;
+}
+
+static PokebotStatus Pokebot_ReadFramebufferSnapshot(
+    u32 byteOffset,
+    u32 byteCount,
+    u8 *out,
+    u32 *outLength)
+{
+    if (!pokebotFramebufferSnapshotValid)
+        return POKEBOT_STATUS_FRAMEBUFFER_INVALID;
+    if (byteCount == 0 || byteCount > POKEBOT_FB_SNAPSHOT_MAX_CHUNK)
+        return POKEBOT_STATUS_LENGTH_INVALID;
+    if (byteOffset >= pokebotFramebufferSnapshotSize ||
+        (u64)byteOffset + (u64)byteCount > (u64)pokebotFramebufferSnapshotSize)
+        return POKEBOT_STATUS_RANGE_INVALID;
+
+    memcpy(out, pokebotFramebufferSnapshot + byteOffset, byteCount);
+    *outLength = byteCount;
+    return POKEBOT_STATUS_OK;
+}
+
 '''
     text = text.replace(marker, helpers + marker, 1)
 
@@ -282,16 +369,45 @@ if "req->command == POKEBOT_CMD_FRAMEBUFFER_INFO" not in text:
         return;
     }
 
+    if (req->command == POKEBOT_CMD_FRAMEBUFFER_SNAPSHOT)
+    {
+        PokebotFramebufferInfo info;
+        u32 generation = 0;
+        PokebotStatus status = Pokebot_CaptureFramebufferSnapshot(
+            req->argument, &info, &generation);
+        svcCloseHandle(target.process);
+        Pokebot_SendResponse(
+            sock, remote, remoteLen, req, status, (s32)generation,
+            status == POKEBOT_STATUS_OK ? &info : NULL,
+            status == POKEBOT_STATUS_OK ? sizeof(info) : 0);
+        return;
+    }
+
+    if (req->command == POKEBOT_CMD_FRAMEBUFFER_SNAPSHOT_READ)
+    {
+        u8 data[POKEBOT_FB_SNAPSHOT_MAX_CHUNK];
+        u32 dataLength = 0;
+        PokebotStatus status = Pokebot_ReadFramebufferSnapshot(
+            req->argument, req->aux, data, &dataLength);
+        svcCloseHandle(target.process);
+        Pokebot_SendResponse(
+            sock, remote, remoteLen, req, status,
+            (s32)pokebotFramebufferSnapshotGeneration,
+            status == POKEBOT_STATUS_OK ? data : NULL,
+            status == POKEBOT_STATUS_OK ? dataLength : 0);
+        return;
+    }
+
 '''
     text = text.replace(marker, route + marker, 1)
 
 bridge_c.write_text(text, encoding="utf-8")
 
 text = menus_c.read_text(encoding="utf-8")
-if "Pokebot-Luma v0p5-fb1" not in text:
+if "Pokebot-Luma v0p5-fb2" not in text:
     if "Pokebot-Luma v0p5" not in text:
         raise SystemExit("v0p5 menu label not found")
-    text = text.replace("Pokebot-Luma v0p5", "Pokebot-Luma v0p5-fb1")
+    text = text.replace("Pokebot-Luma v0p5", "Pokebot-Luma v0p5-fb2")
     menus_c.write_text(text, encoding="utf-8")
 
-print("Pokebot-Luma framebuffer extension applied.")
+print("Pokebot-Luma frozen framebuffer extension fb2 applied.")
