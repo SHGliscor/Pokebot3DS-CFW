@@ -76,7 +76,7 @@ jobs:
           make -C Luma3DS -j"$(nproc)"
           test -s Luma3DS/boot.firm
           test -s Luma3DS/sysmodules/rosalina/rosalina.elf
-          strings Luma3DS/boot.firm | grep -q 'Pokebot3DS-Luma-v0p7-runtime-diag'
+          strings Luma3DS/sysmodules/rosalina/rosalina.elf | grep -q 'Pokebot3DS-Luma-v0p7-runtime-diag'
           sha256sum Luma3DS/boot.firm
 
       - name: Stage runtime diagnostics package
