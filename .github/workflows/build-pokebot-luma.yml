@@ -27,8 +27,6 @@ jobs:
           wget -q https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.18.4/makerom-v0.18.4-ubuntu_x86_64.zip -O /tmp/makerom.zip
           unzip -q /tmp/makerom.zip -d /tmp/makerom
           install -m755 /tmp/makerom/makerom /usr/local/bin/makerom
-          command -v firmtool
-          command -v makerom
 
       - name: Fetch pinned Luma3DS source
         run: |
@@ -38,7 +36,7 @@ jobs:
           git checkout d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a
           test "$(git rev-parse HEAD)" = "d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a"
 
-      - name: Apply Pokebot RAM, controller and framebuffer patches
+      - name: Apply controller framebuffer and New3DS latency patches
         run: |
           set -eux
           python3 luma_pokebot_bridge/tools/apply_ram_bridge.py
@@ -47,34 +45,17 @@ jobs:
           python3 luma_pokebot_bridge/tools/apply_additive_input_redirection.py
           python3 luma_pokebot_bridge/tools/apply_ack_controller_v0p5.py
           python3 luma_pokebot_bridge/tools/apply_framebuffer_bridge.py
-          python3 -m py_compile \
-            luma_pokebot_bridge/tools/apply_framebuffer_bridge.py \
-            luma_pokebot_bridge/tools/test_pokebot_luma_framebuffer.py
+          python3 luma_pokebot_bridge/tools/apply_n3ds_latency_fix_fb.py
 
-          grep -q 'Pokebot-Luma v0p5-fb1' Luma3DS/sysmodules/rosalina/source/menus.c
-          grep -q 'PokebotInputController_SetEnabled' Luma3DS/sysmodules/rosalina/source/menus.c
-          grep -q 'POKEBOT_RAM_PORT       4952' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q 'POKEBOT_MAX_PAYLOAD    0x500' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q '#include "sock_util.h"' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q '#include "draw.h"' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q 'POKEBOT_CMD_READ      = 4' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q 'req->command >= 5 && req->command <= 10' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'Pokebot-Luma v0p6-n3ds-fb1' Luma3DS/sysmodules/rosalina/source/menus.c
+          grep -q 'Pokebot3DS-Luma-v0p6-n3ds-fb1' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'socPoll(&pfd, 1, 0)' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'svcSleepThread(2 \* 1000 \* 1000LL)' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q '0x20, CORE_SYSTEM' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_CMD_FRAMEBUFFER_INFO = 11' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_CMD_FRAMEBUFFER_READ = 12' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q 'Draw_PokebotConvertFrameBufferSpan' Luma3DS/sysmodules/rosalina/source/draw.c
-          grep -q 'Draw_PokebotConvertFrameBufferSpan' Luma3DS/sysmodules/rosalina/include/draw.h
-          grep -q 'POKEBOT_CMD_INPUT_PULSE  6' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
-          grep -q 'POKEBOT_CMD_INPUT_STATUS 7' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
-          grep -q 'POKEBOT_CMD_RELEASE_ALL  8' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
-          grep -q 'POKEBOT_CMD_TOUCH_PULSE  9' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
-          grep -q 'POKEBOT_CMD_HID_LATCH   10' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
           grep -q 'POKEBOT_INPUT_CAPS     0x000000CFUL' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
-          grep -q 'PokebotInput_SetRemoteHid' Luma3DS/sysmodules/rosalina/source/input_redirection.c
-          grep -q 'PokebotInput_SetRemoteTouch' Luma3DS/sysmodules/rosalina/source/input_redirection.c
-          grep -q 'Pokebot additive HID' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
-          grep -q 'and r1, r1, r2      @ Active-low union' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
-          ! grep -q 'WriteTarget' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
 
@@ -83,81 +64,29 @@ jobs:
           set -eux
           make -C Luma3DS -j"$(nproc)"
           test -s Luma3DS/boot.firm
-          test -s Luma3DS/sysmodules/rosalina/rosalina.elf
           sha256sum Luma3DS/boot.firm
 
-      - name: Stage hardware-test package
+      - name: Stage New3DS framebuffer latency package
         run: |
           set -eux
-          mkdir -p artifact/SD_ROOT artifact/SOURCE_PATCHES artifact/DEBUG_SYMBOLS artifact/PC_TEST
+          mkdir -p artifact/SD_ROOT artifact/PC_TEST artifact/SOURCE_PATCHES
           cp Luma3DS/boot.firm artifact/SD_ROOT/boot.firm
-          cp luma_pokebot_bridge/tools/apply_pokebot_menu.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/apply_additive_input_redirection.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/apply_ram_bridge.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/apply_ack_controller_v0p5.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/apply_framebuffer_bridge.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/tools/test_pokebot_luma_ram.py artifact/PC_TEST/
           cp luma_pokebot_bridge/tools/test_pokebot_luma_controller.py artifact/PC_TEST/
           cp luma_pokebot_bridge/tools/test_pokebot_luma_framebuffer.py artifact/PC_TEST/
-          cp luma_pokebot_bridge/README.md artifact/
-          cp luma_pokebot_bridge/FRAMEBUFFER.md artifact/
-          cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
-          cp Luma3DS/sysmodules/rosalina/rosalina.elf artifact/DEBUG_SYMBOLS/
-          cp Luma3DS/sysmodules/rosalina/build/rosalina.map artifact/DEBUG_SYMBOLS/ || true
-          cp Luma3DS/sysmodules/rosalina/build/rosalina.lst artifact/DEBUG_SYMBOLS/ || true
-          cat > artifact/FIRST_TEST.txt <<'EOF'
-          Pokebot-Luma v0p5-fb1 framebuffer hardware proof
-
-          This build is additive to the acknowledged-controller v0p5 branch.
-          Commands 1-10 remain unchanged. New read-only framebuffer commands
-          are 11 FRAMEBUFFER_INFO and 12 FRAMEBUFFER_READ.
-
-          1. Back up your current known-good boot.firm.
-          2. Replace SD-root boot.firm with SD_ROOT/boot.firm.
-          3. Boot normally and launch ORAS.
-          4. Do NOT enable standard Rosalina Miscellaneous -> InputRedirection.
-          5. Open Rosalina -> Pokebot3DS Bridge... -> Enable Both.
-          6. Status should show:
-               Pokebot-Luma v0p5-fb1
-               RAM Bridge:       ON
-               Input Controller: ON
-               RAM UDP:          4952
-               Input UDP:        4952
-               Native IR 4950:   OFF
-          7. Return to ORAS and confirm physical buttons/touch still work.
-          8. Re-run controller smoke tests:
-               python test_pokebot_luma_controller.py <3DS-IP> ping
-               python test_pokebot_luma_controller.py <3DS-IP> pulse A
-               python test_pokebot_luma_controller.py <3DS-IP> pulse START
-          9. Re-run the proven RAM smoke test:
-               python test_pokebot_luma_ram.py <3DS-IP>
-          10. Capture the top screen:
-               python test_pokebot_luma_framebuffer.py <3DS-IP> top top.bmp
-          11. Capture the bottom screen:
-               python test_pokebot_luma_framebuffer.py <3DS-IP> bottom bottom.bmp
-
-          PASS GATE:
-          - controller protocol 1 / caps 0xCF still passes
-          - A/START/D-pad/touch/latch behavior is unchanged
-          - RAM PING/GAME_INFO/QUERY/READ still passes
-          - top.bmp opens as a correct live ORAS top-screen image
-          - bottom.bmp opens as a correct live ORAS bottom-screen image
-
-          SAFETY:
-          - no game RAM write command
-          - RAM READ max remains 0x200
-          - framebuffer service is read-only
-          - framebuffer read payload is capped at 1200 bytes
-          - no persistent framebuffer allocation
-          - commands 1-10 are not renumbered or repurposed
-          EOF
-          printf '%s\n' 'Upstream Luma3DS commit: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a' > artifact/SOURCE_PATCHES/UPSTREAM.txt
+          cp luma_pokebot_bridge/tools/apply_n3ds_latency_fix_fb.py artifact/SOURCE_PATCHES/
           sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
+          cat > artifact/FIRST_TEST.txt <<'EOF'
+          Pokebot-Luma v0p6-n3ds-fb1
+          New 3DS latency fix + framebuffer commands 11-12.
+          Commands 1-10 and RAM read-only authority are preserved.
+          Standard Rosalina InputRedirection must remain OFF.
+          Rosalina -> Pokebot3DS Bridge -> Enable Both.
+          EOF
 
-      - name: Upload test package
+      - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot-Luma-v0p5-fb1-Framebuffer
+          name: Pokebot-Luma-v0p6-n3ds-fb1
           path: artifact/
           if-no-files-found: error
