@@ -38,23 +38,35 @@ jobs:
           git checkout d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a
           test "$(git rev-parse HEAD)" = "d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a"
 
-      - name: Apply Pokebot RAM, Rosalina and additive HID patches
+      - name: Apply Pokebot RAM, Rosalina and acknowledged-input patches
         run: |
           set -eux
           python3 luma_pokebot_bridge/tools/apply_ram_bridge.py
           python3 luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py
           python3 luma_pokebot_bridge/tools/apply_pokebot_menu.py
           python3 luma_pokebot_bridge/tools/apply_additive_input_redirection.py
-          grep -q 'Pokebot-Luma v0p4' Luma3DS/sysmodules/rosalina/source/menus.c
-          grep -q 'PokebotRamBridge_Start' Luma3DS/sysmodules/rosalina/source/menus.c
+          python3 luma_pokebot_bridge/tools/apply_ack_controller_v0p5.py
+
+          grep -q 'Pokebot-Luma v0p5' Luma3DS/sysmodules/rosalina/source/menus.c
+          grep -q 'PokebotInputController_SetEnabled' Luma3DS/sysmodules/rosalina/source/menus.c
           grep -q 'POKEBOT_RAM_PORT       4952' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q '#include "sock_util.h"' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_CMD_READ      = 4' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          ! grep -q 'WriteTarget' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'req->command >= 5 && req->command <= 10' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_CMD_INPUT_PULSE  6' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          grep -q 'POKEBOT_CMD_INPUT_STATUS 7' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          grep -q 'POKEBOT_CMD_RELEASE_ALL  8' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          grep -q 'POKEBOT_CMD_TOUCH_PULSE  9' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          grep -q 'POKEBOT_CMD_HID_LATCH   10' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          grep -q 'POKEBOT_INPUT_CAPS     0x000000CFUL' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          grep -q 'PokebotInput_SetRemoteHid' Luma3DS/sysmodules/rosalina/source/input_redirection.c
+          grep -q 'PokebotInput_SetRemoteTouch' Luma3DS/sysmodules/rosalina/source/input_redirection.c
           grep -q 'Pokebot additive HID' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
           grep -q 'and r1, r1, r2      @ Active-low union' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
+          ! grep -q 'WriteTarget' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
 
       - name: Build boot.firm
         run: |
@@ -73,64 +85,70 @@ jobs:
           cp luma_pokebot_bridge/tools/apply_additive_input_redirection.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/tools/apply_ram_bridge.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/test_pokebot_luma_input.py artifact/PC_TEST/
+          cp luma_pokebot_bridge/tools/apply_ack_controller_v0p5.py artifact/SOURCE_PATCHES/
           cp luma_pokebot_bridge/tools/test_pokebot_luma_ram.py artifact/PC_TEST/
+          cp luma_pokebot_bridge/tools/test_pokebot_luma_controller.py artifact/PC_TEST/
           cp luma_pokebot_bridge/README.md artifact/
           cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
           cp Luma3DS/sysmodules/rosalina/rosalina.elf artifact/DEBUG_SYMBOLS/
           cp Luma3DS/sysmodules/rosalina/build/rosalina.map artifact/DEBUG_SYMBOLS/ || true
           cp Luma3DS/sysmodules/rosalina/build/rosalina.lst artifact/DEBUG_SYMBOLS/ || true
           cat > artifact/FIRST_TEST.txt <<'EOF'
-          Pokebot-Luma v0p4 read-only RAM bridge hardware test
+          Pokebot-Luma v0p5 acknowledged-controller hardware proof
 
-          HARDWARE-PROVEN BEFORE THIS BUILD:
-          - v0p2 menu/reboot foundation
-          - v0p3 synthetic A and START
-          - physical controls and touch remain usable
-          - physical input works during a synthetic hold
+          DO NOT RUN THE FULL BOT YET.
 
-          v0p4 preserves that controller path and activates RAM UDP 4952.
+          v0p4 RAM is intentionally preserved. v0p5 restores the controller
+          protocol on UDP 4952 so timing/release/status are owned by the 3DS,
+          while retaining the hardware-proven additive physical HID merge.
 
-          IMPORTANT:
-          1. Keep a copy of the known-good v0p3 boot.firm.
-          2. Replace SD root boot.firm with SD_ROOT/boot.firm.
+          1. Back up your known-good v0p4 boot.firm.
+          2. Replace SD-root boot.firm with SD_ROOT/boot.firm.
           3. Boot normally and launch ORAS.
-          4. Open Rosalina -> Pokebot3DS Bridge...
-          5. Select Enable Both.
+          4. Do NOT enable standard Rosalina Miscellaneous -> InputRedirection.
+          5. Open Rosalina -> Pokebot3DS Bridge... -> Enable Both.
           6. Status should show:
-               Pokebot-Luma v0p4
+               Pokebot-Luma v0p5
                RAM Bridge:       ON
                RAM result:       0x00000000
                RAM UDP:          4952
                Input Controller: ON
                Input result:     0x00000000
-               Input UDP:        4950
-          7. Return to ORAS. Confirm real buttons and touchscreen still work.
-          8. From INSIDE the extracted PC_TEST folder run:
+               Input UDP:        4952
+               Native IR 4950:   OFF
+          7. Return to ORAS and confirm physical buttons and touchscreen work.
+          8. From inside PC_TEST run:
+               python test_pokebot_luma_controller.py <3DS-IP> ping
+          9. Then:
+               python test_pokebot_luma_controller.py <3DS-IP> pulse A
+               python test_pokebot_luma_controller.py <3DS-IP> pulse START
+          10. On a harmless overworld tile, test a firmware-timed D-pad pulse:
+               python test_pokebot_luma_controller.py <3DS-IP> pulse UP --hold 160 --settle 140
+          11. Test latch + emergency release/coexistence:
+               python test_pokebot_luma_controller.py <3DS-IP> latch A --seconds 1.5
+              During the 1.5 second latch, press a DIFFERENT physical button
+              and try physical touch. They should remain usable.
+          12. Only while safely in a battle command menu, test native touch:
+               python test_pokebot_luma_controller.py <3DS-IP> touch
+              Default raw touch is 0x01EA97FF, the proven ORAS Run coordinate.
+          13. Re-run the proven RAM smoke test:
                python test_pokebot_luma_ram.py <3DS-IP>
-             Example:
-               python test_pokebot_luma_ram.py 192.168.0.28
-          9. Expected:
-               PING: PASS Pokebot3DS-Luma-v0p4
-               GAME_INFO: PASS
-               QUERY: PASS
-               READ: PASS 32 bytes
-             The default read is 0x20 bytes from game code address 0x00100000.
-          10. Re-open Status. Packets should have increased and Reads >= 1.
-          11. Re-test the already-proven input path if desired:
-               python test_pokebot_luma_input.py <3DS-IP> A
-               python test_pokebot_luma_input.py <3DS-IP> START
-          12. Confirm physical controls/touch still work afterward.
 
-          RAM SAFETY:
-          - QUERY and READ only
-          - maximum READ = 0x200 bytes
-          - no game-memory write command
-          - each read validates the region, maps only required pages, copies,
-            then immediately unmaps
+          PASS GATE BEFORE DESKTOP BOT INTEGRATION:
+          - INPUT_PING protocol 1 / caps 0xCF
+          - A and START consumed by ORAS
+          - D-pad pulse returns neutral and has sane movement timing
+          - physical buttons/touch coexist with injected HID
+          - HID_LATCH remains active until RELEASE_ALL
+          - RELEASE_ALL returns injected HID to 0xFFF
+          - TOUCH_PULSE works in the intended battle menu
+          - RAM PING/GAME_INFO/QUERY/READ still pass
 
-          Do not start normal hunt/endurance testing until this generic RAM
-          smoke test passes on hardware.
+          SAFETY:
+          - no game RAM write command
+          - RAM READ max remains 0x200
+          - controller state only targets Luma's injected HID/touch storage
+          - native UDP 4950 InputRedirection is intentionally not used by v0p5
           EOF
           printf '%s\n' 'Upstream Luma3DS commit: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a' > artifact/SOURCE_PATCHES/UPSTREAM.txt
           sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
@@ -138,6 +156,6 @@ jobs:
       - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot-Luma-v0p4-ReadOnlyRamBridge
+          name: Pokebot-Luma-v0p5-AcknowledgedController
           path: artifact/
           if-no-files-found: error
