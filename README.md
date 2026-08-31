@@ -17,75 +17,7 @@
   <a href="https://github.com/SHGliscor/Pokebot3DS-CFW/network/members"><img src="https://img.shields.io/github/forks/SHGliscor/Pokebot3DS-CFW?style=flat-square" alt="GitHub forks"></a>
 </p>
 
-Pokebot3DS-CFW is a RAM-authoritative Pokémon Omega Ruby / Alpha Sapphire automation project for real Nintendo 3DS hardware. Shiny decisions come from validated Gen 6 Pokémon data in RAM, while normal controller and touchscreen input is sent through the acknowledged Pokebot controller path.
 
-## Current status
-
-### Working / usable
-
-- RAM-based shiny detection and PK6 reading
-- PC → 3DS acknowledged controller input
-- soft-reset automation
-- Hoenn starter shiny hunting
-- basic Wild shiny hunting
-- target/filter framework
-- basic automatic Poké Ball throwing
-- Old 3DS support and largely unified New 3DS support
-
-### Working but still being hardened
-
-- Auto Capture and failed-capture retries
-- Pokédex → nickname → Box continuation
-- Horde hunting
-- Fishing
-- gift/static Pokémon handling
-- New 3DS hunt-specific timing consistency
-- Discord integration and dashboard polish
-
-### Current focus — Fossil Batch Hunting
-
-The target lifecycle is:
-
-```text
-revive 5 fossils
-→ validate each new PK6 from RAM
-→ shiny = immediate HOLD
-→ non-shiny = advance received-Pokémon text
-→ decline nickname
-→ continue to next fossil
-→ reset only after 5 confirmed non-shinies
-```
-
-Current fossil work includes mixed batches across all 11 ORAS-revivable fossil Pokémon, stable PK6 validation across three consecutive matching reads, rejection of transient/partially-written party data, and the hardware-proven post-revival sequence:
-
-```text
-stable PK6 → A once → nickname prompt → B once
-```
-
-The complete five-fossil loop still requires final end-to-end hardware validation before it should be treated as production-complete.
-
-### Needs rewrite
-
-- Idle Party Viewer — valid party data can be read, but stale/live-order behaviour remains and the viewer is planned for a full rewrite.
-
-### Still to add
-
-- user-selectable Poké Ball override, with Best Ball remaining the default
-- auto-battle using any valid attacking move read from Pokémon data/RAM
-- Sweet Scent from any move slot
-- Honey horde support
-- map/terrain-aware grass movement improvements
-- stronger RAM mapping for Devon fossil selection and fossil nickname readiness
-
-### Later
-
-- Pokémon X/Y
-- Ultra Sun / Ultra Moon
-- Gen 2 VC
-- Gen 4/5 research
-- possible separate CFW Switch RAM bot
-
-See the [Wiki](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki) and [Roadmap](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Roadmap) for the detailed status.
 
 ### Inspiration
 
@@ -98,7 +30,6 @@ Pokebot3DS-CFW takes inspiration from excellent Pokémon automation projects inc
 Pokebot3DS-CFW is an independent implementation built around RAM-authoritative Gen 6 shiny hunting, 3DS input automation and real-hardware safety gates.
 
 *huge THANKYOU to moepunzie on the Pokebot-gen3 discord for helping me test the new 3ds side*
-
 ---
 
 ## 🤖 Project Transparency & Use of AI
