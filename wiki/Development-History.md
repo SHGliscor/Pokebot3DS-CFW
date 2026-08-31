@@ -20,84 +20,98 @@ one logical encounter decision
 → continue only on an authorised non-keeper result
 ```
 
-This removed the need to visually classify every possible normal/shiny presentation.
-
 ## Pokebot-Luma / acknowledged controller
 
-RAM access moved away from debugger-style polling toward a dedicated Luma3DS-derived read-only bridge. The controller path then gained acknowledgement, status, explicit release, native touch and retained HID latch.
+RAM access moved toward a dedicated Luma3DS-derived read-only bridge. The controller path gained acknowledgement, status, explicit release, native touch and retained HID latch.
 
-Hardware proof established game identification, bounded process-memory reads, real ORAS PK6 decrypt/checksum validation and controller input on real hardware without game-RAM writes.
-
-A key lesson was that a firmware acknowledgement proves the controller command executed, not necessarily that ORAS consumed the input in the intended UI state. Hunt workers therefore combine controller ACKs with RAM/state authority.
+A major lesson was that firmware acknowledgement proves that an injected input command executed; it does **not** prove ORAS consumed that input in the intended UI state. Production state machines therefore combine controller ACKs with RAM/game-state authority.
 
 ## Starter automation
 
-Treecko, Torchic and Mudkip became the first mature RAM-authoritative hunt family. Their reset and starter-selection paths established the fail-closed pattern used throughout the project:
-
-```text
-shiny = HOLD
-invalid/uncertain = HOLD
-only validated non-shiny = continue/reset
-```
+Treecko, Torchic and Mudkip became the first mature RAM-authoritative hunt family and established the project's fail-closed safety model.
 
 ## Wild hunting and Auto Capture
 
-The Wild engine expanded into RAM-authoritative encounter handling and automated battle navigation. Automatic Poké Ball throwing then required reverse engineering of the Battle Bag and post-capture lifecycle.
+The Wild engine expanded into RAM-authoritative encounter handling, movement/escape and automated Battle Bag control.
 
-Important mapped phases include capture/breakout handling plus Pokédex, nickname and Box continuation. Multi-ball retry and post-capture recovery are now substantially implemented, although wider soak testing is still required.
+Capture development then added:
 
-## Horde / Fishing / gift and static expansion
+- repeated-ball handling after failed captures;
+- Pokédex/nickname/Box continuation;
+- Best Ball selection;
+- **Capture Ball Override** for forcing an exact supported Ball instead of automatic scoring.
 
-Horde hunting, Sweet Scent, Fishing and gift/static frameworks were added on top of the same RAM-authoritative foundation. These hunt families are at different hardware-validation levels and remain active hardening areas rather than being treated as equally mature.
+## Fossil Batch
 
-## Fossil Batch Hunting
+Fossil revival exposed several important state-machine and PK6-authority lessons, including mixed fossil inventories and transient newly-written party data.
 
-Fossil revival exposed two particularly important findings.
-
-First, mixed fossil inventories mean the bot cannot assume that every revival produces one fixed species. The development path now covers all 11 ORAS-revivable fossil Pokémon.
-
-Second, hardware replay proved that a newly-created party slot can be sampled while ORAS is still writing the PK6. A transient read may even appear checksum-valid while species/trainer/PID fields are not yet authoritative.
-
-The fossil reader therefore moved toward stable identity authority:
+The fossil work progressed to the hardware-proven **v0p43DR** state machine/exhaustion baseline. Later builds retain that authority while making the batch adaptive:
 
 ```text
-plausible new PK6
-→ validate context/trainer/species/checksum
-→ require same identity for 3 consecutive reads
-→ only then calculate authoritative shiny state
+available supported fossils: 1–5
+→ revive/check the actual available count, capped at five
+→ mixed species allowed
+→ every revived PK6 independently shiny-checked
+→ shiny = immediate HOLD
+→ all non-shiny + batch exhausted = reset
 ```
 
-Manual hardware tracing also established the correct post-revival dialogue sequence:
+v0p43DS then corrected fossil statistics so real batch sizes, species and reset counts are stored rather than inferred from encounter totals.
+
+## Honey Horde
+
+The Horde trigger system expanded from Natural/Sweet Scent to **Honey**.
+
+Hardware development established:
+
+- Honey item RAM authority;
+- the corrected bottom-screen Bag shortcut;
+- the slot-1/preselected fast path;
+- guarded A1/A2 use choreography;
+- Honey quantity and battle-state proof;
+- one bounded A2 retry when an acknowledged input produced no game-side change.
+
+## Horde Auto-Attack — v0p43ED to v0p43EG
+
+The next step toward safe shiny Horde capture was proving that the bot can select and execute a damaging move without relying on a fixed move slot.
+
+v0p43ED added a one-shot **non-shiny Horde auto-attack validator**. It reads the live lead PK6, all four move IDs/current PP and bundled ORAS move metadata, then selects an authorised single-target damaging move.
+
+v0p43EE isolated the execution chain to slot 2 and hardware-proved:
 
 ```text
-stable PK6
-→ A once to advance received-Pokémon text
-→ nickname prompt
-→ B once to decline nickname
+FIGHT → MOVE → TARGET → ATTACK → RESOLUTION
 ```
 
-Older approaches such as DOWN+A, immediate B after PK6 and repeated B clearing were disproved by hardware testing.
+v0p43EF captured the real ORAS MOVE screen on hardware. v0p43EG then calibrated all four move-button centres:
 
-The current remaining fossil milestone is proving the complete five-revival loop through repeated 1→2→3→4→5→reset batches, then replacing conservative timing with stronger RAM-defined Devon/nickname states.
+```text
+slot 1 = (74,69)
+slot 2 = (246,69)
+slot 3 = (74,133)
+slot 4 = (246,133)
+```
+
+The v0p43EG validator now executes the live policy-selected safe damaging move instead of forcing slot 2. Any real shiny blocks the validator before attack input.
+
+The remaining step is the full protected-shiny Horde reducer: KO only validated non-shiny opponents, revalidate after every turn, then hand the isolated shiny to Auto Capture.
 
 ## Party Viewer lesson
 
-The existing Idle Party Viewer has repeatedly shown stale party/order behaviour. Rather than continue patching it, the planned direction is a full rewrite using the newer live/stable PK6 principles discovered during gift/fossil work.
+The existing Idle Party Viewer has repeatedly shown stale party/order behaviour. Rather than continue patching it, the planned direction is a full rewrite using live/stable PK6 principles learned during gift/fossil development.
 
 ## Current baseline direction
 
-Current priority is:
+Current priority from v0p43EG is:
 
 ```text
-finish Fossil Batch Hunting
-→ RAM-define remaining fossil UI states
+finish protected-shiny Horde reducer/capture handoff
 → rewrite Party Viewer
-→ add Poké Ball override
-→ RAM-driven move selection / auto-battle
-→ Sweet Scent any slot + Honey
 → harden capture / Horde / Fishing
+→ Sweet Scent any-slot improvements
+→ UI / Discord cleanup
 → freeze stable ORAS baseline
 → begin Pokémon X/Y support
 ```
 
-The README and Wiki should preserve this history rather than presenting the current architecture as though it appeared fully formed.
+The README and Wiki preserve the development history while the repository landing page remains intentionally minimal.
