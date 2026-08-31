@@ -4,48 +4,41 @@ Pokebot3DS-CFW is a RAM-authoritative shiny-hunting automation project for **Pok
 
 The project combines a Windows Qt dashboard with **Pokebot-Luma**, a Luma3DS-derived firmware build that provides a read-only RAM bridge and an acknowledged controller path on UDP `4952`. Shiny decisions come from validated Gen 6 Pokémon data in RAM rather than OCR, image matching or RAM writes.
 
-## Current ORAS status
+## Current baseline
 
-### Working / usable
+The current production/development build is **v0p43EG — Horde Auto-Attack Calibrated Move Buttons**.
+
+Major implemented systems include:
 
 - Treecko, Torchic and Mudkip starter automation
 - read-only RAM authority and PK6 checksum/shiny validation
 - acknowledged controller input and soft-reset automation
-- basic Wild shiny hunting
+- Wild shiny hunting
 - target/filter framework
-- basic automatic Poké Ball throwing
+- automatic Poké Ball throwing and capture retry handling
+- **Capture Ball Override**, with Best Ball as the default
+- Pokédex → nickname → Box continuation
+- adaptive mixed **Fossil Batch — Any 1–5 Fossils**
+- Sweet Scent and **Honey** Horde triggering
+- Horde five-opponent RAM authority
+- current four-slot Horde move-policy / auto-attack validator
 - Old 3DS support and largely unified New 3DS support
 
-### Working but still being hardened
+## Current development focus
 
-- Auto Capture and failed-capture retries
-- Pokédex, nickname and Box continuation after capture
-- Horde hunting
-- Fishing
-- gift/static Pokémon handling
-- New 3DS hunt-specific timing consistency
-- Discord integration and dashboard polish
+v0p43EG advances the Horde protected-shiny battle path. It reads the live lead PK6, evaluates all four move slots using bundled ORAS move metadata, selects a safe single-target damaging move and executes exactly one attack in the non-shiny validation mode.
 
-### Current focus — Fossil Batch Hunting
+v0p43EE hardware-proved the full attack chain through move slot 2. v0p43EG uses calibrated ORAS MOVE-screen centres for all four slots and now follows the live policy-selected move. A real shiny blocks the validator before attack input.
 
-The current fossil work is building a safe five-revival loop:
+The next step is turning that validated one-shot attack path into the full protected-shiny Horde reducer/capture lifecycle, with RAM revalidation after every turn.
 
-```text
-revive 5 fossils
-→ check each stable PK6 from RAM
-→ shiny = immediate HOLD
-→ decline nickname on non-shiny
-→ continue
-→ reset only after 5 confirmed non-shinies
-```
+## Fossil Batch status
 
-Mixed batches across all 11 ORAS-revivable fossil Pokémon are supported by the current development path. The new PK6 authority requires three consecutive matching reads so transient/partially-written party data is ignored. Hardware testing established the post-revival sequence `stable PK6 → A once → nickname prompt → B once`.
+The fossil state machine/exhaustion authority in the current build is inherited from the hardware-proven v0p43DR baseline. The adaptive profile revives and checks the supported Devon fossils actually available in the Bag, capped at five per reset. Mixed fossil species are supported and every revived PK6 is independently shiny-checked.
 
-The complete five-fossil loop still needs final end-to-end hardware validation before it is considered production-complete.
+## Main known UI issue
 
-### Main known UI issue
-
-The Idle Party Viewer is planned for a full rewrite. Valid party Pokémon can be decoded, but manual party changes while the bot is idle can leave stale slot/order data on the dashboard. This is isolated from shiny authority.
+The Idle Party Viewer is planned for a full rewrite. Valid party Pokémon can be decoded, but manual party changes while the bot is idle can leave stale slot/order data on the dashboard. This is isolated from hunt shiny authority.
 
 ## Documentation
 
