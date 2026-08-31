@@ -1,79 +1,88 @@
 # ORAS Roadmap
 
-Pokebot3DS-CFW has moved well beyond the original starter-reset scope. The roadmap now uses implementation status rather than a single completion percentage, because different hunt families have very different levels of hardware proof.
+This page reflects the current **v0p43EG** production/development baseline.
 
 ## Working / usable
 
 - read-only RAM bridge and acknowledged controller input
 - PK6 decrypt/checksum/shiny authority
 - Treecko, Torchic and Mudkip starter automation
-- basic Wild shiny hunting
+- Wild shiny hunting
 - target/filter framework
-- basic automatic Poké Ball throwing
+- automatic Poké Ball throwing and capture retry path
+- **Capture Ball Override** with Best Ball as the default
+- Pokédex → nickname → Box continuation path
+- adaptive mixed **Fossil Batch — Any 1–5 Fossils**
 - Old 3DS support and largely unified New 3DS support
 
-## Working but still being hardened
+## Implemented / still being hardened
 
-- Auto Capture and failed-capture retries
-- Pokédex → nickname → Box continuation
 - Horde hunting
+- Sweet Scent Horde trigger
+- **Honey Horde trigger** with live RAM authority and guarded use/retry handling
 - Fishing
 - gift/static Pokémon handling
 - New 3DS hunt-specific timing consistency
 - Discord integration and dashboard polish
+- capture lifecycle soak testing across more edge cases
 
-## Current focus — Fossil Batch Hunting
+## Fossil Batch
 
-Target lifecycle:
+The fossil state machine is hardware-proven through the v0p43DR baseline retained by v0p43EG.
+
+The current adaptive profile revives the supported Devon fossils actually available in the Bag, capped at five per reset:
 
 ```text
-revive fossil
-→ wait for stable new PK6
-→ shiny = immediate HOLD
-→ non-shiny = advance received-Pokémon text
-→ decline nickname
-→ continue to next fossil
-→ after 5 confirmed non-shinies, reset
+1 available fossil  → revive/check 1 → reset
+2 available fossils → revive/check 2 → reset
+3 available fossils → revive/check 3 → reset
+4 available fossils → revive/check 4 → reset
+5+ available fossils → revive/check 5 → reset
 ```
 
-Current fossil implementation/research includes:
+Mixed fossil species are supported. Every revived PK6 is independently validated and shiny-checked, and a shiny causes an immediate Safety HOLD before post-gift input.
 
-- mixed batches across all 11 ORAS-revivable fossil Pokémon
-- stable PK6 authority requiring three consecutive matching reads
-- rejection of transient/partially-written party data
-- trainer/species/checksum validation before shiny authority
-- hardware-proven post-revival choreography: `stable PK6 → A once → nickname prompt → B once`
+## Current focus — Horde Auto-Attack
 
-The complete 5-fossil loop is not yet considered production-complete until it passes end-to-end hardware validation across repeated batches.
+v0p43EG contains the current Horde auto-attack validator.
+
+The validator:
+
+- refreshes the live lead PK6;
+- reads all four move IDs and current PP;
+- evaluates bundled ORAS move metadata;
+- rejects unsafe spread/random/all-foe choices for the protected-shiny use case;
+- selects an authorised single-target damaging move;
+- sends exactly one attack in the non-shiny validation mode;
+- blocks all validator attack input if a real shiny is present.
+
+v0p43EE hardware-proved the complete FIGHT → MOVE → TARGET → ATTACK → RESOLUTION chain through move slot 2. v0p43EG uses hardware-calibrated ORAS button centres for all four move slots and now executes the live policy-selected move rather than forcing slot 2.
+
+The remaining milestone is to move from the one-shot non-shiny validator to the fully protected real-shiny Horde reducer/capture lifecycle, with revalidation after every turn.
 
 ## Needs rewrite
 
 ### Idle Party Viewer
 
-The current Party Viewer can display valid Pokémon data but does not reliably track manual party changes while idle. It is planned for a full rewrite around live/stable PK6 sampling rather than further incremental patches.
+The existing Party Viewer can decode valid party data but does not reliably track manual party changes while idle. The planned fix is a full rewrite around live/stable PK6 sampling rather than further incremental patches.
 
-## Still to add
+## Still to add / finish
 
-1. User-selectable Poké Ball override for relevant non-starter hunts; Best Ball remains the default.
-2. RAM/PK6-driven move discovery and auto-battle using any valid attacking move.
-3. Sweet Scent from any move slot.
-4. Honey as an alternative Horde trigger.
-5. Map/terrain-aware grass movement improvements.
-6. Stronger RAM state mapping for Devon fossil selection.
-7. Stronger RAM state mapping for fossil nickname readiness.
-8. Further capture, Horde and Fishing soak testing, especially on New 3DS.
-9. Dashboard and Discord reliability/polish work.
+1. Full protected-shiny Horde auto-battle reducer and handoff to capture.
+2. Sweet Scent discovery/use from any move slot where the current hunt path still assumes a fixed setup.
+3. Further grass/map-aware movement improvements.
+4. Further capture/Horde/Fishing soak testing, especially on New 3DS.
+5. Party Viewer rewrite.
+6. Dashboard and Discord reliability/polish work.
 
 ## Development priority
 
 ```text
-finish Fossil Batch Hunting
-→ replace conservative fossil timing with RAM states
+finish Horde protected-shiny auto-attack/capture path
 → rewrite Party Viewer
-→ add Poké Ball override
-→ add RAM-driven move selection / auto-battle
-→ Sweet Scent any slot + Honey
 → harden capture / Horde / Fishing
+→ Sweet Scent any-slot improvements
+→ UI / Discord cleanup
 → freeze stable ORAS baseline
 → begin Pokémon X/Y support
 ```
