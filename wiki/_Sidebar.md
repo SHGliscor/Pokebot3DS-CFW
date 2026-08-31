@@ -12,6 +12,7 @@
 - [Wild Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Wild-Hunts)
 - [Cave Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Cave-Hunts)
 - [Horde Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Horde-Hunts)
+- [Fossil Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Fossil-Hunts)
 - [Surf / Ocean](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Surf-Ocean-Hunts)
 - [Encounter Database](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Encounter-Database)
 

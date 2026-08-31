@@ -4,71 +4,100 @@ Pokebot3DS-CFW has evolved through several generations of ORAS automation. This 
 
 ## Image/OCR-era ORAS bot
 
-Early ORAS development used capture-card/image authority for many hunt paths. Considerable choreography was proven during this period, including:
+Early ORAS development used capture-card/image authority for many hunt paths. Considerable choreography was proven during this period, including starters, static encounters, Wild/Horde work and portal hunts.
 
-- Hoenn starters
-- Spiritomb
-- Kecleon
-- Regirock
-- Regice
-- Registeel
-- Heatran
-- Reshiram
-- Zekrom
-- Terrakion
-- Virizion
-- early Wild/Horde/portal hunt work
-
-This work remains valuable for controller/navigation choreography, but visual shiny authority is being replaced by RAM authority.
+That work remains useful for controller/navigation choreography, but shiny authority has been rebuilt around game RAM.
 
 ## RAM rebuild
 
-The project was rebuilt around a stricter rule:
+The project moved to a stricter rule:
 
 ```text
 one logical encounter decision
 → read validated game RAM
 → checksum/species/state proof
 → calculate shiny
-→ continue only on authorised non-keeper result
+→ continue only on an authorised non-keeper result
 ```
 
-This removed the need to visually validate every possible normal/shiny species presentation.
+This removed the need to visually classify every possible normal/shiny presentation.
 
-## Pokebot-Luma
+## Pokebot-Luma / acknowledged controller
 
-RAM access was moved away from unstable debugger-style polling toward a dedicated Luma3DS-derived read-only bridge.
+RAM access moved away from debugger-style polling toward a dedicated Luma3DS-derived read-only bridge. The controller path then gained acknowledgement, status, explicit release, native touch and retained HID latch.
 
-Hardware proof established:
+Hardware proof established game identification, bounded process-memory reads, real ORAS PK6 decrypt/checksum validation and controller input on real hardware without game-RAM writes.
 
-- game identification
-- bounded process-memory QUERY/READ
-- real ORAS PK6 read/decrypt/checksum validation
-- controller input on real hardware
-- physical and injected control coexistence during the migration period
+A key lesson was that a firmware acknowledgement proves the controller command executed, not necessarily that ORAS consumed the input in the intended UI state. Hunt workers therefore combine controller ACKs with RAM/state authority.
 
-## Acknowledged controller
+## Starter automation
 
-The newer controller protocol added acknowledgement, status, explicit release, native touch and retained HID latch.
+Treecko, Torchic and Mudkip became the first mature RAM-authoritative hunt family. Their reset and starter-selection paths established the fail-closed pattern used throughout the project:
 
-A key finding was that a controller acknowledgement did not necessarily mean ORAS had observed a short reset chord long enough to reset. The starter reset path was therefore changed to a retained reset chord followed by explicit release and game/process-transition verification.
+```text
+shiny = HOLD
+invalid/uncertain = HOLD
+only validated non-shiny = continue/reset
+```
 
-## Current starter state
+## Wild hunting and Auto Capture
 
-Treecko, Torchic and Mudkip are current-controller proven and remain separate frozen modules. Treecko received a narrow early-battle timing improvement without moving the final RAM authority deadline.
+The Wild engine expanded into RAM-authoritative encounter handling and automated battle navigation. Automatic Poké Ball throwing then required reverse engineering of the Battle Bag and post-capture lifecycle.
 
-Recent observed development timings are around 35.5 seconds for Torchic, 36.7 seconds for Mudkip and 37.3 seconds for Treecko.
+Important mapped phases include capture/breakout handling plus Pokédex, nickname and Box continuation. Multi-ball retry and post-capture recovery are now substantially implemented, although wider soak testing is still required.
 
-## Current Wild/Horde/Cave state
+## Horde / Fishing / gift and static expansion
 
-The RAM-authoritative Wild engine grew into terrain-contained unlimited hunting with automatic escape. Horde handling added five-opponent authority and Sweet Scent re-arm. Cave hunting gained cave-specific stable-grid authority, longer locally-proven Cave Run movement and explicit post-battle re-arm for Cave Run/Acro Bunny.
+Horde hunting, Sweet Scent, Fishing and gift/static frameworks were added on top of the same RAM-authoritative foundation. These hunt families are at different hardware-validation levels and remain active hardening areas rather than being treated as equally mature.
 
-## Current known UI work
+## Fossil Batch Hunting
 
-The Party Pokémon panel can read valid identities/details but still needs the exact live runtime ordering source for immediate in-menu party reorder updates. This work is isolated from hunt authority.
+Fossil revival exposed two particularly important findings.
+
+First, mixed fossil inventories mean the bot cannot assume that every revival produces one fixed species. The development path now covers all 11 ORAS-revivable fossil Pokémon.
+
+Second, hardware replay proved that a newly-created party slot can be sampled while ORAS is still writing the PK6. A transient read may even appear checksum-valid while species/trainer/PID fields are not yet authoritative.
+
+The fossil reader therefore moved toward stable identity authority:
+
+```text
+plausible new PK6
+→ validate context/trainer/species/checksum
+→ require same identity for 3 consecutive reads
+→ only then calculate authoritative shiny state
+```
+
+Manual hardware tracing also established the correct post-revival dialogue sequence:
+
+```text
+stable PK6
+→ A once to advance received-Pokémon text
+→ nickname prompt
+→ B once to decline nickname
+```
+
+Older approaches such as DOWN+A, immediate B after PK6 and repeated B clearing were disproved by hardware testing.
+
+The current remaining fossil milestone is proving the complete five-revival loop through repeated 1→2→3→4→5→reset batches, then replacing conservative timing with stronger RAM-defined Devon/nickname states.
+
+## Party Viewer lesson
+
+The existing Idle Party Viewer has repeatedly shown stale party/order behaviour. Rather than continue patching it, the planned direction is a full rewrite using the newer live/stable PK6 principles discovered during gift/fossil work.
 
 ## Current baseline direction
 
-The current development strategy is to freeze proven Alpha Sapphire behaviour, complete the Omega Ruby parity pass for existing non-starter methods, then build the remaining ORAS hunt families: Fishing/Chain Fishing, RAM Static/Portal, postgame starters, DexNav, Rock Smash and shared Auto Capture.
+Current priority is:
 
-The README and Wiki should preserve this history rather than rewriting the project as though the current architecture appeared fully formed.
+```text
+finish Fossil Batch Hunting
+→ RAM-define remaining fossil UI states
+→ rewrite Party Viewer
+→ add Poké Ball override
+→ RAM-driven move selection / auto-battle
+→ Sweet Scent any slot + Honey
+→ harden capture / Horde / Fishing
+→ freeze stable ORAS baseline
+→ begin Pokémon X/Y support
+```
+
+The README and Wiki should preserve this history rather than presenting the current architecture as though it appeared fully formed.

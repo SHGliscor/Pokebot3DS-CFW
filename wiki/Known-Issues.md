@@ -2,48 +2,66 @@
 
 This page tracks problems that are known but intentionally isolated from already-proven hunt authority.
 
-## Party Pokémon live order
+## Idle Party Viewer
 
-**Status:** open, display-only.
+**Status:** open; full rewrite planned.
 
-The dashboard can read valid party Pokémon identity/data and populate the six cards, but an in-game manual party reorder may not immediately change the displayed slot order. In current testing, closing/reopening ORAS can cause the new order to appear.
+The dashboard can decode valid party Pokémon data, but manual in-game party changes while Pokebot3DS-CFW is idle can leave stale slot/order information visible until another hunt/state refresh occurs.
 
-Several stale/cached party copies have been identified in RAM. The remaining work is finding the exact live runtime order structure that ORAS updates immediately when the party menu changes.
+Incremental fixes have not solved this reliably, so the current direction is to rewrite the Party Viewer around live/stable PK6 sampling rather than continue patching the old polling path.
 
-This issue does not participate in:
+This display problem is isolated from the validated shiny authority used by hunt workers.
 
-- starter shiny authority
-- Wild shiny authority
-- Horde shiny authority
-- Cave shiny authority
-- reset permission
-- automatic Run permission
+## Partially-written party PK6 during gift/capture lifecycle
 
-## Omega Ruby parity sweep
+**Status:** understood; stabilisation being introduced where required.
 
-Several non-starter hunt paths are already Alpha Sapphire hardware-tested but still need the planned current-controller Omega Ruby parity pass, particularly Horde, Cave and Surf/Ocean.
+Hardware fossil testing proved that a party slot can be sampled while ORAS is still committing the new Pokémon. A transient read can occasionally look structurally/checksum valid while identity fields are not yet authoritative.
 
-This is validation work rather than evidence that those systems are known broken on Omega Ruby.
+For fossil gift authority, the current development path therefore requires a plausible candidate to remain identical across **three consecutive reads** before shiny authority is granted. Candidate identity is checked against the expected context, including trainer/species/checksum information where available.
 
-## Direct framebuffer transport
+This finding is also relevant to the planned Party Viewer rewrite and any other lifecycle that reads a newly-created/captured party Pokémon.
 
-The PC-side screenshot/image pipeline exists, but the current Pokebot-Luma bridge does not yet provide the complete direct framebuffer transport required for capture-free Discord screenshots.
+## Fossil Batch Hunting
 
-This is presentation-only and does not affect shiny authority.
+**Status:** active development; not yet production-complete.
+
+The current goal is a five-fossil batch:
+
+```text
+revive → stable PK6 → shiny check → A received text → nickname prompt → B decline → next fossil
+```
+
+Mixed fossil species and the post-revival A/B choreography are understood, but the complete 1→2→3→4→5→reset loop still needs repeated end-to-end hardware proof.
+
+The Devon fossil-selection menu and fossil nickname readiness also still need stronger RAM-defined state authority so conservative timing can eventually be reduced.
+
+## Auto Capture lifecycle hardening
+
+**Status:** usable/development hardened, but edge cases remain.
+
+Automatic Poké Ball throwing, capture continuation and failed-capture retry logic have been developed and hardware-tested, including Pokédex/nickname/Box transitions. Wider soak testing is still required before every capture path should be treated as fully production-frozen.
+
+## New 3DS hunt-specific consistency
+
+The unified controller/bridge supports both Old and New 3DS hardware, but individual hunt methods can still expose timing/touch differences that require hardware-specific validation. Fixes should remain local to the affected method unless logs prove a shared transport problem.
 
 ## Non-English languages
 
 English is the current hardware-verified ORAS language. Other languages are not yet claimed as supported until separately tested.
 
-## Not yet production-complete hunt families
+## Not yet complete / still to add
 
-The following are roadmap items rather than bugs in an already-supported method:
+These are roadmap items rather than regressions in already-proven starter authority:
 
-- Fishing / Chain Fishing
-- Static / Portal production engine
-- Johto / Unova / Sinnoh postgame starters
-- DexNav
-- Rock Smash
-- Auto Capture
+- user-selectable Poké Ball override
+- RAM/PK6-driven attacking-move selection
+- Sweet Scent from any move slot
+- Honey Horde support
+- further grass/map-aware movement improvements
+- full Party Viewer rewrite
+- stronger Devon fossil-selection and nickname-state mapping
+- final capture/Horde/Fishing hardening
+- Pokémon X/Y and later-game support
 
-See [Roadmap](Roadmap.md) for development order.
+See [Roadmap](Roadmap.md) for current development order.

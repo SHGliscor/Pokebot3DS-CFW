@@ -2,25 +2,50 @@
 
 Pokebot3DS-CFW is a RAM-authoritative shiny-hunting automation project for **Pokémon Omega Ruby 1.4** and **Pokémon Alpha Sapphire 1.4** running on real Nintendo 3DS hardware.
 
-The project combines a Windows Qt dashboard with **Pokebot-Luma**, a Luma3DS-derived firmware build that provides a read-only RAM bridge and an acknowledged controller path. Shiny decisions come from validated Gen 6 Pokémon data in RAM rather than OCR, image matching or RAM writes.
+The project combines a Windows Qt dashboard with **Pokebot-Luma**, a Luma3DS-derived firmware build that provides a read-only RAM bridge and an acknowledged controller path on UDP `4952`. Shiny decisions come from validated Gen 6 Pokémon data in RAM rather than OCR, image matching or RAM writes.
 
 ## Current ORAS status
 
-The current development estimate is **75% complete**.
+### Working / usable
 
-Major systems already implemented or hardware-proven include:
+- Treecko, Torchic and Mudkip starter automation
+- read-only RAM authority and PK6 checksum/shiny validation
+- acknowledged controller input and soft-reset automation
+- basic Wild shiny hunting
+- target/filter framework
+- basic automatic Poké Ball throwing
+- Old 3DS support and largely unified New 3DS support
 
-- Treecko, Torchic and Mudkip starter automation, including Random mode
-- read-only RAM authority and PK6 checksum validation
-- acknowledged controller input, retained HID latch, native touch pulse and explicit release
-- normal Wild Walk/Run hunting with terrain containment and automatic escape
-- Natural Horde and Sweet Scent Horde handling
-- Cave Walk, Cave Run and Cave Acro Bunny
-- Surf/Ocean development path
-- whole-game ORAS encounter/terrain database and HUNTS browser
-- persistent stats/history, Discord integration, block-list handling and support ZIP export
+### Working but still being hardened
 
-The main known UI issue is live Party Pokémon ordering: valid party data can be read, but manual in-game party reordering may not immediately update the dashboard until ORAS is restarted. This is isolated from shiny authority.
+- Auto Capture and failed-capture retries
+- Pokédex, nickname and Box continuation after capture
+- Horde hunting
+- Fishing
+- gift/static Pokémon handling
+- New 3DS hunt-specific timing consistency
+- Discord integration and dashboard polish
+
+### Current focus — Fossil Batch Hunting
+
+The current fossil work is building a safe five-revival loop:
+
+```text
+revive 5 fossils
+→ check each stable PK6 from RAM
+→ shiny = immediate HOLD
+→ decline nickname on non-shiny
+→ continue
+→ reset only after 5 confirmed non-shinies
+```
+
+Mixed batches across all 11 ORAS-revivable fossil Pokémon are supported by the current development path. The new PK6 authority requires three consecutive matching reads so transient/partially-written party data is ignored. Hardware testing established the post-revival sequence `stable PK6 → A once → nickname prompt → B once`.
+
+The complete five-fossil loop still needs final end-to-end hardware validation before it is considered production-complete.
+
+### Main known UI issue
+
+The Idle Party Viewer is planned for a full rewrite. Valid party Pokémon can be decoded, but manual party changes while the bot is idle can leave stale slot/order data on the dashboard. This is isolated from shiny authority.
 
 ## Documentation
 
@@ -33,6 +58,7 @@ The main known UI issue is live Party Pokémon ordering: valid party data can be
 - [Wild Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Wild-Hunts)
 - [Cave Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Cave-Hunts)
 - [Horde Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Horde-Hunts)
+- [Fossil Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Fossil-Hunts)
 - [Surf and Ocean Hunts](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Surf-Ocean-Hunts)
 - [Encounter Database](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Encounter-Database)
 - [Stats and History](https://github.com/SHGliscor/Pokebot3DS-CFW/wiki/Stats-History)

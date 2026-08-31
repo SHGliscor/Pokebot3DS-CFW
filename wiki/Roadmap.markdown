@@ -1,71 +1,89 @@
 # ORAS Roadmap
 
-Current ORAS development estimate: **75%**.
+Pokebot3DS-CFW has moved well beyond the original starter-reset scope. The roadmap now uses implementation status rather than a single completion percentage, because different hunt families have very different levels of hardware proof.
 
-Percentages are development estimates rather than automated code coverage. Progress should move when a section gains real implementation, hardware proof, production integration or required game parity.
+## Working / usable
 
-| ORAS section | Progress | Status |
-|---|---:|---|
-| CFW / RAM / input bridge | 100% | Hardware-proven read-only bridge + acknowledged controller |
-| Hoenn starter automation | 100% | Treecko/Torchic/Mudkip + Random operational |
-| Grass Wild automation | 100% | RAM-authoritative movement/encounter/escape core operational |
-| Horde automation | 95% | AS proven; OR parity remains |
-| Cave automation | 95% | AS proven; OR parity remains |
-| Surf / Ocean automation | 90% | Implemented/development hardware-tested; OR parity remains |
-| Encounter / terrain DB + browser | 100% | Whole-game ORAS data/browser live |
-| Dashboard / HUNTS | 95% | Main workflow live; Party live-order issue remains |
-| STATS / history | 90% | Persistent analytics/history implemented |
-| TOOLS / support | 90% | Diagnostics and support ZIP workflow implemented |
-| Discord / Rich Presence | 85% | Implemented; media/event polish remains |
-| Direct 3DS screenshot pipeline | 50% | PC pipeline exists; direct firmware transport pending |
-| Block list | 90% | Integrated; documentation/polish remains |
-| Fishing | 20% | Data present; production controller remains |
-| Static encounters | 30% | Previous choreography exists; RAM production engine remains |
-| Postgame starters | 15% | Browser entries live; automation remains |
-| Language validation | 15% | English proven; additional languages remain |
-| Release / docs | 95% | README/wiki/release structure close to complete |
+- read-only RAM bridge and acknowledged controller input
+- PK6 decrypt/checksum/shiny authority
+- Treecko, Torchic and Mudkip starter automation
+- basic Wild shiny hunting
+- target/filter framework
+- basic automatic Poké Ball throwing
+- Old 3DS support and largely unified New 3DS support
 
-## Immediate validation
+## Working but still being hardened
 
-The next broad hardware pass is Omega Ruby parity across existing non-starter hunt methods:
+- Auto Capture and failed-capture retries
+- Pokédex → nickname → Box continuation
+- Horde hunting
+- Fishing
+- gift/static Pokémon handling
+- New 3DS hunt-specific timing consistency
+- Discord integration and dashboard polish
 
-- normal Wild Walk/Run
-- Natural and Sweet Scent Hordes
-- Cave Walk/Run/Acro Bunny
-- Surf/Ocean
+## Current focus — Fossil Batch Hunting
 
-The objective is to validate the existing shared ORAS implementation, not redesign Alpha Sapphire-proven behaviour without evidence.
-
-## Remaining hunt families
-
-After OR/AS parity is frozen:
-
-1. Fishing and Chain Fishing
-2. Static encounters and Mirage Spot/portal legendaries
-3. Johto / Unova / Sinnoh postgame starters
-4. DexNav
-5. Rock Smash
-6. selected gift/fossil reset hunts
-7. shared shiny Auto Capture
-
-Previous image-era development already produced usable choreography for Spiritomb, Kecleon, Regirock, Regice, Registeel, Heatran, Reshiram, Zekrom, Terrakion and Virizion. The current goal is to reuse safe navigation choreography while replacing visual shiny authority with PK6 RAM authority.
-
-## Auto Capture plan
-
-Auto Capture will be a shared subsystem rather than a separate macro for every hunt method.
+Target lifecycle:
 
 ```text
-RAM proves keeper shiny
-→ normal hunt continuation disabled
-→ lock target identity by species/PID/EC
-→ capture only while identity/state remains valid
-→ confirm catch
-→ stop hunt
-→ uncertainty = SHINY HOLD
+revive fossil
+→ wait for stable new PK6
+→ shiny = immediate HOLD
+→ non-shiny = advance received-Pokémon text
+→ decline nickname
+→ continue to next fossil
+→ after 5 confirmed non-shinies, reset
 ```
 
-Single-opponent capture comes first. Horde capture will add a protected-shiny-slot front-end before using the same shared capture backend.
+Current fossil implementation/research includes:
+
+- mixed batches across all 11 ORAS-revivable fossil Pokémon
+- stable PK6 authority requiring three consecutive matching reads
+- rejection of transient/partially-written party data
+- trainer/species/checksum validation before shiny authority
+- hardware-proven post-revival choreography: `stable PK6 → A once → nickname prompt → B once`
+
+The complete 5-fossil loop is not yet considered production-complete until it passes end-to-end hardware validation across repeated batches.
+
+## Needs rewrite
+
+### Idle Party Viewer
+
+The current Party Viewer can display valid Pokémon data but does not reliably track manual party changes while idle. It is planned for a full rewrite around live/stable PK6 sampling rather than further incremental patches.
+
+## Still to add
+
+1. User-selectable Poké Ball override for relevant non-starter hunts; Best Ball remains the default.
+2. RAM/PK6-driven move discovery and auto-battle using any valid attacking move.
+3. Sweet Scent from any move slot.
+4. Honey as an alternative Horde trigger.
+5. Map/terrain-aware grass movement improvements.
+6. Stronger RAM state mapping for Devon fossil selection.
+7. Stronger RAM state mapping for fossil nickname readiness.
+8. Further capture, Horde and Fishing soak testing, especially on New 3DS.
+9. Dashboard and Discord reliability/polish work.
+
+## Development priority
+
+```text
+finish Fossil Batch Hunting
+→ replace conservative fossil timing with RAM states
+→ rewrite Party Viewer
+→ add Poké Ball override
+→ add RAM-driven move selection / auto-battle
+→ Sweet Scent any slot + Honey
+→ harden capture / Horde / Fishing
+→ freeze stable ORAS baseline
+→ begin Pokémon X/Y support
+```
 
 ## Later games
 
-After ORAS reaches the desired production state, future project targets include Pokémon X/Y, Sun/Moon, Ultra Sun/Ultra Moon and Gen 2 VC Gold/Silver/Crystal integration.
+After ORAS reaches the desired production baseline, planned/researched targets include:
+
+- Pokémon X/Y
+- Ultra Sun / Ultra Moon
+- Gen 2 VC Gold/Silver/Crystal
+- Gen 4/5 research through 3DS DS-mode tooling
+- possible separate CFW Switch RAM automation project
