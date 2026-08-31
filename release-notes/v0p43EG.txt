@@ -1,0 +1,18 @@
+Pokebot3DS-CFW v0p43EG — Horde Auto-Attack Calibrated Move Buttons
+
+Current production baseline supplied by the project maintainer.
+
+Highlights:
+- Unified Pokémon Omega Ruby / Alpha Sapphire build.
+- Read-only RAM authority; no game-RAM writes.
+- Hardware-proven starter and existing ORAS hunt framework retained.
+- Adaptive mixed Fossil Batch supports any 1–5 available Devon fossils per reset.
+- Capture Ball Override is implemented; Best Ball remains the default.
+- Honey Horde trigger is implemented with guarded live RAM authority.
+- Horde auto-attack validator reads all four lead move slots and applies bundled ORAS move metadata.
+- v0p43EE hardware-proved the complete non-shiny Horde attack chain through move slot 2.
+- v0p43EG uses calibrated ORAS move button centers for slots 1–4 and executes the live policy-selected safe damaging move.
+- Any real shiny blocks the auto-attack test before attack input.
+
+Build SHA256:
+bc419d8bd9d97513f2a5b5edb2b77cfe568612e37573f0f434481f220272c5f7
