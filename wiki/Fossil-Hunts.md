@@ -1,26 +1,28 @@
 # Fossil Hunts
 
-Fossil Batch Hunting is the current active ORAS development focus.
+Fossil Batch Hunting is implemented in the current v0p43EG baseline and inherits the **hardware-proven v0p43DR fossil state machine/exhaustion authority**.
 
-## Goal
+## Adaptive batch size
 
-The intended production loop revives up to five fossils into empty party slots, checks every newly-created Pokémon directly from RAM, stops immediately on a shiny, and only resets after five confirmed non-shinies.
+The current profile is:
+
+**Fossil Batch — Any 1–5 Fossils**
+
+The worker starts with one lead Pokémon and empty party slots, reads the supported Devon fossils actually available in the Bag, and revives up to five per reset.
 
 ```text
-revive fossil
-→ wait for stable new PK6
-→ validate trainer/species/checksum/context
-→ shiny = immediate HOLD
-→ non-shiny = A once to advance received-Pokémon text
-→ nickname prompt
-→ B once to decline nickname
-→ next fossil
-→ after 5 confirmed non-shinies, reset
+1 available fossil  → revive/check 1 → reset
+2 available fossils → revive/check 2 → reset
+3 available fossils → revive/check 3 → reset
+4 available fossils → revive/check 4 → reset
+5+ available fossils → revive/check 5 → reset
 ```
+
+Mixed fossil species are supported.
 
 ## Supported fossil Pokémon
 
-The current mixed-batch development path covers all 11 ORAS-revivable fossil Pokémon:
+The current mixed-batch path covers all 11 ORAS-revivable fossil Pokémon:
 
 - Omanyte
 - Kabuto
@@ -34,57 +36,32 @@ The current mixed-batch development path covers all 11 ORAS-revivable fossil Pok
 - Tyrunt
 - Amaura
 
-Mixed fossil inventories are important because the bot cannot safely assume that the next revival will always be one fixed species.
+## PK6 and shiny authority
 
-## Stable PK6 authority
+Every revived Pokémon is independently validated and shiny-checked from RAM. A shiny causes an immediate Safety HOLD before post-gift input.
 
-Hardware testing showed that ORAS can expose a party slot while the game is still committing the newly-created Pokémon. A single read can therefore be transient, and a transient read can occasionally look structurally/checksum valid while identity fields are not yet authoritative.
+The fossil work also established an important general RAM rule: a newly-created party slot can be observed while ORAS is still committing the PK6. The gift/fossil path therefore uses stable/context-valid party authority rather than trusting arbitrary transient party data.
 
-The current fossil authority requires:
+## Post-revival dialogue
 
-1. a new/changed party candidate in the expected gift context;
-2. valid stored PK6 structure;
-3. valid checksum;
-4. expected trainer identity and supported fossil species/context;
-5. the same Pokémon identity across **three consecutive reads**.
-
-Only that stable candidate is allowed to become shiny authority.
-
-## Hardware-proven post-revival input
-
-Manual tracing established the important dialogue order after the fossil Pokémon is created:
+Hardware tracing established the important post-gift interaction order:
 
 ```text
-stable PK6
-→ A once
-→ nickname prompt
-→ B once
+validated revived PK6
+→ advance received-Pokémon dialogue
+→ decline nickname
+→ continue batch
 ```
 
-The A advances the received-Pokémon dialogue. The single B then declines the nickname prompt.
+Earlier experimental approaches such as DOWN+A at the nickname question and repeated blind B clearing were rejected by hardware evidence and are not the intended production logic.
 
-The following earlier approaches were disproved in hardware testing and should not be reintroduced without new evidence:
+## Exhaustion / reset authority
 
-- DOWN + A at the nickname question
-- B immediately when the PK6 first appears
-- multiple/four-B clearing sequences
-- treating the coarse field flow value alone as nickname readiness
-
-## Current status
-
-The individual pieces are substantially mapped, but Fossil Batch Hunting is still **development / hardware-validation status**, not a production-frozen hunt method.
-
-Still to prove or improve:
-
-- complete fossil 1 → 2 → 3 → 4 → 5 progression
-- reset only after five confirmed non-shinies
-- repeated full-batch soak testing
-- deterministic fossil-selection authority when multiple fossil item types are in the Bag
-- stronger RAM-defined Devon menu states
-- stronger RAM-defined nickname readiness so conservative timing can be reduced
+The batch does not assume that five fossils must exist. It records the actual available batch size, revived species, batches and resets in statistics/history, then resets after that adaptive batch has been exhausted and every revived Pokémon has been confirmed non-shiny.
 
 ## Safety
 
-A stable shiny fossil must cause an absolute HOLD before post-revival dialogue input is sent. Transient/invalid party reads must not create false shiny authority, and uncertainty must fail closed rather than blindly advance or reset.
-
-No game RAM writes are used.
+- shiny fossil = immediate HOLD;
+- invalid/uncertain authority = fail closed;
+- every revived PK6 is checked independently;
+- no game RAM writes are used.
