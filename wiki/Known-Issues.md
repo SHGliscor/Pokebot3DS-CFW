@@ -1,6 +1,6 @@
 # Known Issues
 
-This page tracks problems that are known but intentionally isolated from already-proven hunt authority.
+This page tracks problems that remain open in the current **v0p43EG** baseline.
 
 ## Idle Party Viewer
 
@@ -10,58 +10,54 @@ The dashboard can decode valid party Pokémon data, but manual in-game party cha
 
 Incremental fixes have not solved this reliably, so the current direction is to rewrite the Party Viewer around live/stable PK6 sampling rather than continue patching the old polling path.
 
-This display problem is isolated from the validated shiny authority used by hunt workers.
+This display problem is isolated from validated shiny authority used by hunt workers.
 
-## Partially-written party PK6 during gift/capture lifecycle
+## Partially-written party PK6
 
-**Status:** understood; stabilisation being introduced where required.
+**Status:** understood; relevant to newly-created/captured party Pokémon.
 
-Hardware fossil testing proved that a party slot can be sampled while ORAS is still committing the new Pokémon. A transient read can occasionally look structurally/checksum valid while identity fields are not yet authoritative.
+Hardware fossil testing proved that a party slot can be sampled while ORAS is still committing a new Pokémon. A transient read can occasionally look structurally/checksum valid while identity fields are not yet authoritative.
 
-For fossil gift authority, the current development path therefore requires a plausible candidate to remain identical across **three consecutive reads** before shiny authority is granted. Candidate identity is checked against the expected context, including trainer/species/checksum information where available.
+Gift/fossil authority therefore uses stable/context-valid PK6 handling rather than trusting an arbitrary first changed read. This finding is also relevant to the Party Viewer rewrite and capture/gift lifecycle readers.
 
-This finding is also relevant to the planned Party Viewer rewrite and any other lifecycle that reads a newly-created/captured party Pokémon.
+## Horde protected-shiny reducer
 
-## Fossil Batch Hunting
+**Status:** current active development.
 
-**Status:** active development; not yet production-complete.
+v0p43EG contains the RAM-driven one-shot Horde auto-attack validator. The move policy reads all four lead move slots and v0p43EG has calibrated MOVE-screen centres for slots 1–4. Slot 2's full attack chain is hardware-proven end-to-end.
 
-The current goal is a five-fossil batch:
+What is **not yet production-complete** is the full real-shiny reducer that repeatedly KOs only validated non-shiny Horde members, revalidates after each turn, and then hands the isolated shiny to Auto Capture.
 
-```text
-revive → stable PK6 → shiny check → A received text → nickname prompt → B decline → next fossil
-```
-
-Mixed fossil species and the post-revival A/B choreography are understood, but the complete 1→2→3→4→5→reset loop still needs repeated end-to-end hardware proof.
-
-The Devon fossil-selection menu and fossil nickname readiness also still need stronger RAM-defined state authority so conservative timing can eventually be reduced.
+A real shiny blocks the current non-shiny validator before attack input.
 
 ## Auto Capture lifecycle hardening
 
-**Status:** usable/development hardened, but edge cases remain.
+**Status:** implemented and usable, but wider edge-case soak testing remains.
 
-Automatic Poké Ball throwing, capture continuation and failed-capture retry logic have been developed and hardware-tested, including Pokédex/nickname/Box transitions. Wider soak testing is still required before every capture path should be treated as fully production-frozen.
+Automatic Poké Ball throwing, Capture Ball Override, capture continuation and failed-capture retry logic are present, including Pokédex/nickname/Box transitions. More hardware soak testing is still useful across different encounter/capture outcomes.
 
 ## New 3DS hunt-specific consistency
 
 The unified controller/bridge supports both Old and New 3DS hardware, but individual hunt methods can still expose timing/touch differences that require hardware-specific validation. Fixes should remain local to the affected method unless logs prove a shared transport problem.
 
+## Fishing / other less-soaked methods
+
+Fishing and some gift/static/capture paths have less hardware soak time than the starter core. Their presence in the build should not be interpreted as equal maturity across every edge case.
+
 ## Non-English languages
 
 English is the current hardware-verified ORAS language. Other languages are not yet claimed as supported until separately tested.
 
-## Not yet complete / still to add
+## Still to finish
 
-These are roadmap items rather than regressions in already-proven starter authority:
-
-- user-selectable Poké Ball override
-- RAM/PK6-driven attacking-move selection
-- Sweet Scent from any move slot
-- Honey Horde support
-- further grass/map-aware movement improvements
-- full Party Viewer rewrite
-- stronger Devon fossil-selection and nickname-state mapping
+- full protected-shiny Horde reducer/capture handoff
+- Party Viewer rewrite
+- Sweet Scent any-slot improvements where required
+- further grass/map-aware movement work
 - final capture/Horde/Fishing hardening
+- dashboard/Discord polish and reliability work
 - Pokémon X/Y and later-game support
+
+Already implemented in v0p43EG and therefore **not** open roadmap items: Capture Ball Override, Honey Horde triggering, adaptive 1–5 Fossil Batch handling, and four-slot Horde move-policy selection.
 
 See [Roadmap](Roadmap.md) for current development order.
