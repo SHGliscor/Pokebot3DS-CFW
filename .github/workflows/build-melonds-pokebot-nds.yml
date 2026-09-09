@@ -28,6 +28,7 @@ jobs:
           cp pokebot-nds/melonds_bridge/PokebotBridge.cpp melonDS-switch-upscale/src/frontend/switch/PokebotBridge.cpp
           cp pokebot-nds/melonds_bridge/PokebotBridge.h melonDS-switch-upscale/src/frontend/switch/PokebotBridge.h
           python3 pokebot-nds/melonds_bridge/apply_ci_patch.py melonDS-switch-upscale
+          python3 pokebot-nds/melonds_bridge/apply_hf2_socket_reuse.py melonDS-switch-upscale
 
       - name: Build Switch NRO with devkitPro container
         run: |
@@ -40,11 +41,11 @@ jobs:
       - name: Stage NRO
         run: |
           mkdir -p artifact
-          cp melonDS-switch-upscale/build-switch-pokebot/melonDS.nro artifact/melonDS-Pokebot-nds-v0p1.nro
+          cp melonDS-switch-upscale/build-switch-pokebot/melonDS.nro artifact/melonDS-Pokebot-nds-v0p1-HF2.nro
 
       - name: Upload NRO
         uses: actions/upload-artifact@v4
         with:
-          name: melonDS-Pokebot-nds-v0p1
-          path: artifact/melonDS-Pokebot-nds-v0p1.nro
+          name: melonDS-Pokebot-nds-v0p1-HF2
+          path: artifact/melonDS-Pokebot-nds-v0p1-HF2.nro
           if-no-files-found: error
