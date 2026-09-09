@@ -1,0 +1,130 @@
+name: Build Gen2 Crystal VC Probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'luma_pokebot_bridge/**'
+      - 'gen2/**'
+      - '.github/workflows/build-gen2-crystal-probe.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+
+    steps:
+      - name: Checkout Pokebot repo
+        uses: actions/checkout@v4
+
+      - name: Install host tools
+        run: |
+          set -eux
+          apt-get update
+          apt-get install -y --no-install-recommends git python3 python3-pip ca-certificates wget unzip make
+          python3 -m pip install --break-system-packages git+https://github.com/TuxSH/firmtool.git@fdc7085c2394d87ce5dbdfecdf51423e1e7b00a1
+          wget -q https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.18.4/makerom-v0.18.4-ubuntu_x86_64.zip -O /tmp/makerom.zip
+          unzip -q /tmp/makerom.zip -d /tmp/makerom
+          install -m755 /tmp/makerom/makerom /usr/local/bin/makerom
+
+      - name: Fetch pinned Luma3DS source
+        run: |
+          set -eux
+          git clone https://github.com/LumaTeam/Luma3DS.git Luma3DS
+          cd Luma3DS
+          git checkout d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a
+          test "$(git rev-parse HEAD)" = "d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a"
+
+      - name: Apply Pokebot bridge and Crystal VC support
+        run: |
+          set -eux
+          python3 luma_pokebot_bridge/tools/apply_ram_bridge.py
+          python3 luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py
+          python3 luma_pokebot_bridge/tools/apply_crystal_vc_support.py
+          python3 luma_pokebot_bridge/tools/apply_pokebot_menu.py
+          python3 luma_pokebot_bridge/tools/apply_additive_input_redirection.py
+
+          grep -q 'POKEBOT_CRYSTAL_EN_TID 0x0004000000172800ULL' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'tid == POKEBOT_CRYSTAL_EN_TID' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_CMD_READ      = 4' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          ! grep -q 'POKEBOT_CMD_WRITE' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+
+      - name: Syntax-check Crystal PC probe
+        run: |
+          set -eux
+          python3 -m py_compile luma_pokebot_bridge/tools/test_crystal_vc_ram.py
+          python3 luma_pokebot_bridge/tools/test_crystal_vc_ram.py --help >/dev/null
+
+      - name: Build boot.firm
+        run: |
+          set -eux
+          make -C Luma3DS -j"$(nproc)"
+          test -s Luma3DS/boot.firm
+          test -s Luma3DS/sysmodules/rosalina/rosalina.elf
+          sha256sum Luma3DS/boot.firm
+
+      - name: Stage Crystal hardware-test package
+        run: |
+          set -eux
+          mkdir -p artifact/SD_ROOT artifact/PC_TEST artifact/SOURCE_PATCHES artifact/DEBUG_SYMBOLS
+          cp Luma3DS/boot.firm artifact/SD_ROOT/boot.firm
+          cp luma_pokebot_bridge/tools/test_crystal_vc_ram.py artifact/PC_TEST/
+          cp luma_pokebot_bridge/tools/run_crystal_vc_ram_probe.bat artifact/PC_TEST/
+          cp luma_pokebot_bridge/tools/test_pokebot_luma_ram.py artifact/PC_TEST/
+          cp luma_pokebot_bridge/tools/apply_ram_bridge.py artifact/SOURCE_PATCHES/
+          cp luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py artifact/SOURCE_PATCHES/
+          cp luma_pokebot_bridge/tools/apply_crystal_vc_support.py artifact/SOURCE_PATCHES/
+          cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
+          cp Luma3DS/sysmodules/rosalina/rosalina.elf artifact/DEBUG_SYMBOLS/
+          cp Luma3DS/sysmodules/rosalina/build/rosalina.map artifact/DEBUG_SYMBOLS/ || true
+          sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
+          cat > artifact/FIRST_TEST.txt <<'EOF'
+          Pokebot3DS-CFW Gen 2 - Pokémon Crystal VC RAM probe
+
+          Supported first target:
+          - Pokémon Crystal Version, English official 3DS Virtual Console
+          - Title ID 0004000000172800
+
+          PURPOSE
+          Prove that Pokebot-Luma can read Crystal's live Game Boy WRAM through
+          the existing read-only UDP 4952 bridge. No game-memory write command
+          is added by this build.
+
+          TEST
+          1. Back up your current known-good boot.firm.
+          2. Put SD_ROOT/boot.firm at the SD card root.
+          3. Boot the 3DS and launch English Pokémon Crystal VC.
+          4. Enable the Pokebot RAM bridge in Rosalina.
+          5. Return to Crystal and stand somewhere safe.
+          6. Run PC_TEST/run_crystal_vc_ram_probe.bat and enter the 3DS IP.
+
+          EXPECTED
+          - PING: PASS
+          - GAME_INFO title=0x0004000000172800
+          - Crystal WRAM mapping: 3DS 0x08A23FAC + GB address
+          - Trainer ID is printed
+          - Party count/party Pokémon are printed
+          - DVs and SHINY YES/no are printed for party/wild/egg buffers
+          - Final line: PASS: Crystal VC RAM snapshot read successfully.
+
+          LIVE TEST
+          Run:
+              python test_crystal_vc_ram.py <3DS-IP> --watch --raw
+          Then move, enter a wild encounter, or change the party and confirm
+          the corresponding RAM values change live.
+
+          IMPORTANT
+          The wild and egg buffers may contain stale data when those systems are
+          inactive. At this stage we are proving address mapping and PK2 parsing;
+          battle/event-state gating comes next.
+          EOF
+
+      - name: Upload Crystal probe package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokebot3DS-CFW-Gen2-Crystal-VC-RAM-Probe
+          path: artifact/
+          if-no-files-found: error
