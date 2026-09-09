@@ -1,0 +1,44 @@
+name: Build Pokebot-nds melonDS Bridge
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout bridge host repo
+        uses: actions/checkout@v4
+
+      - name: Checkout maintained melonDS Switch fork
+        uses: actions/checkout@v4
+        with:
+          repository: trulymust/melonDS-switch-upscale
+          path: melonDS-switch-upscale
+          submodules: recursive
+
+      - name: Install bridge patch files
+        run: |
+          cp pokebot-nds/melonds_bridge/PokebotBridge.cpp melonDS-switch-upscale/src/frontend/switch/PokebotBridge.cpp
+          cp pokebot-nds/melonds_bridge/PokebotBridge.h melonDS-switch-upscale/src/frontend/switch/PokebotBridge.h
+          python3 pokebot-nds/melonds_bridge/apply_ci_patch.py melonDS-switch-upscale
+
+      - name: Build Switch NRO with devkitPro container
+        run: |
+          docker run --rm \
+            -v "$PWD/melonDS-switch-upscale:/work" \
+            -w /work/build-switch-pokebot \
+            devkitpro/devkita64:latest \
+            sh -lc '. /opt/devkitpro/switchvars.sh; cmake .. -G Ninja -DENABLE_OGLRENDERER=OFF -DBUILD_QT_SDL=OFF -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-Switch.cmake; ninja -j2'
+
+      - name: Stage NRO
+        run: |
+          mkdir -p artifact
+          cp melonDS-switch-upscale/build-switch-pokebot/melonDS.nro artifact/melonDS-Pokebot-nds-v0p1.nro
+
+      - name: Upload NRO
+        uses: actions/upload-artifact@v4
+        with:
+          name: melonDS-Pokebot-nds-v0p1
+          path: artifact/melonDS-Pokebot-nds-v0p1.nro
+          if-no-files-found: error
