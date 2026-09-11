@@ -1,0 +1,71 @@
+name: HOS23 Mesosphere Symbols
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - atmosphere-hos23-cloud-build
+    paths:
+      - '.github/workflows/hos23-mesosphere-symbols.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Clone pinned Atmosphere 23_support
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone --recursive https://github.com/Atmosphere-NX/Atmosphere.git atmosphere
+          cd atmosphere
+          git checkout --detach aad15daad6862f5fbbdccb159f6bdc26944e84c9
+          git submodule update --init --recursive
+
+      - name: Patch build environment and HOS23 kernel version
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd atmosphere
+          sed -i '/RUN dkp-pacman -S switch-tools hactool --noconfirm && dkp-pacman -Syu --noconfirm/d' Dockerfile
+          FILE="libraries/libvapours/include/vapours/svc/svc_version.hpp"
+          grep -q 'SupportedKernelMajorVersion = ConvertToSvcMajorVersion(22)' "$FILE"
+          sed -i 's/SupportedKernelMajorVersion = ConvertToSvcMajorVersion(22)/SupportedKernelMajorVersion = ConvertToSvcMajorVersion(23)/' "$FILE"
+
+      - name: Build devkitA64 container
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker build -t atmosphere-hos23-symbols ./atmosphere
+
+      - name: Build Mesosphere only
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker run --rm --user 0:0 -v "$PWD/atmosphere:/src" -w /src atmosphere-hos23-symbols bash -lc 'set -e; git config --global --add safe.directory /src; make -C mesosphere -j$(nproc) all'
+
+      - name: Collect Mesosphere symbols
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p symbols
+          find atmosphere/mesosphere -type f \( -name 'kernel.elf' -o -name 'kernel.lst' -o -name 'kernel.bin' -o -name 'mesosphere.bin' -o -name 'kernel_ldr.elf' -o -name 'kernel_ldr.lst' -o -name 'kernel_ldr.bin' \) -print -exec cp --parents {} symbols/ \;
+          find atmosphere/libraries/libmesosphere -type f -name 'libmesosphere.a' -print -exec cp --parents {} symbols/ \;
+          find symbols -type f -print
+          test "$(find symbols -type f -name 'kernel.elf' | wc -l)" -ge 1
+          test "$(find symbols -type f -name 'kernel.lst' | wc -l)" -ge 1
+          test "$(find symbols -type f -name 'mesosphere.bin' | wc -l)" -ge 1
+          (cd symbols && find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+
+      - name: Upload Mesosphere symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: HOS23-Mesosphere-Symbols-aad15daa
+          path: symbols/**
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
