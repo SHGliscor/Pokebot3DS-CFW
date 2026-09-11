@@ -61,7 +61,7 @@ if '"Pokebot3DS-Luma-v0p5"' not in text:
     raise SystemExit("v0p5 bridge identity marker not found")
 text = text.replace(
     '"Pokebot3DS-Luma-v0p5"',
-    '"Pokebot3DS-Luma-v0p6-n3ds-fb1"',
+    '"Pokebot3DS-Luma-v0p7-n3ds-fb1-cpad"',
     1,
 )
 bridge_c.write_text(text, encoding="utf-8")
@@ -71,9 +71,9 @@ if "Pokebot-Luma v0p5-fb1" not in menus:
     raise SystemExit("v0p5-fb1 menu label not found")
 menus = menus.replace(
     "Pokebot-Luma v0p5-fb1",
-    "Pokebot-Luma v0p6-n3ds-fb1",
+    "Pokebot-Luma v0p7-n3ds-fb1-cpad",
     1,
 )
 menus_c.write_text(menus, encoding="utf-8")
 
-print("Pokebot-Luma New 3DS latency fix applied on top of framebuffer build.")
+print("Pokebot-Luma New 3DS latency + acknowledged CPAD build applied on top of framebuffer build.")
