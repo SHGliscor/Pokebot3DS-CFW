@@ -99,3 +99,5 @@ jobs:
           name: Pokebot-Luma-v0p6-n3ds-fb1
           path: artifact/
           if-no-files-found: error
+
+# HF77 CPAD rebuild after source placement fix
