@@ -25,6 +25,16 @@ jobs:
           git submodule update --init --recursive
           test "$(git rev-parse HEAD)" = "aad15daad6862f5fbbdccb159f6bdc26944e84c9"
 
+      - name: Patch redundant devkitPro package refresh
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd atmosphere
+          # The pinned devkitA64 base image already contains switch-tools and hactool.
+          # pkg.devkitpro.org can reject the redundant Dockerfile reinstall with HTTP 403.
+          sed -i '/RUN dkp-pacman -S switch-tools hactool --noconfirm && dkp-pacman -Syu --noconfirm/d' Dockerfile
+          grep -q 'FROM devkitpro/devkita64:20260219' Dockerfile
+
       - name: Build upstream devkitA64 container
         shell: bash
         run: |
@@ -35,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          docker run --rm             -v "$PWD/atmosphere:/src"             -w /src             atmosphere-hos23-23support             bash -lc 'make -j$(nproc) dist-no-debug-nx_release'
+          docker run --rm             -v "$PWD/atmosphere:/src"             -w /src             atmosphere-hos23-23support             bash -lc 'set -e; command -v hactool; command -v build_romfs; make -j$(nproc) dist-no-debug-nx_release'
 
       - name: Collect and verify outputs
         shell: bash
@@ -65,6 +75,7 @@ jobs:
             echo "Branch: 23_support"
             echo "Commit: aad15daad6862f5fbbdccb159f6bdc26944e84c9"
             echo "Build target: dist-no-debug-nx_release"
+            echo "devkitPro package refresh skipped because required tools are already in base image"
           } > dist/BUILD_INFO.txt
 
           (cd dist && sha256sum * > SHA256SUMS.txt)
