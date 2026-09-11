@@ -1,0 +1,1 @@
+Trigger HOS 23 Atmosphere CI after workflow path correction.
