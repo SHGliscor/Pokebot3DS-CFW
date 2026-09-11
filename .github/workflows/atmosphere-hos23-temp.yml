@@ -9,7 +9,7 @@ jobs:
   build:
     if: github.head_ref == 'atmosphere-hos23-ci'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - name: Fetch Atmosphere 23_support
         run: |
@@ -32,10 +32,6 @@ jobs:
           PY
           grep -n "SupportedKernel" atmosphere/libraries/libvapours/include/vapours/svc/svc_version.hpp
 
-      - name: Build Atmosphere exact toolchain image
-        run: |
-          docker build -t atmosphere-hos23-builder atmosphere
-
       - name: Compile package3 and fusee
         run: |
           mkdir -p artifacts
@@ -43,9 +39,12 @@ jobs:
             -v "$PWD/atmosphere:/work" \
             -v "$PWD/artifacts:/artifacts" \
             -w /work \
-            atmosphere-hos23-builder \
+            devkitpro/devkita64:20260219 \
             bash -lc '
               set -e
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install -y python3-lz4 python3-pip zip
+              dkp-pacman -S --noconfirm switch-tools hactool
               make -j2 dist-no-debug-nx_release
               pkg="$(find out -type f -name package3 -print -quit)"
               fus="$(find out -type f -name fusee.bin -print -quit)"
