@@ -25,6 +25,34 @@ extern volatile u32 pokebotInputCommands;
 Result PokebotInputController_SetEnabled(bool enable);
 void PokebotInputController_Update(void);
 void PokebotInputController_ReleaseAll(void);
+static u16 startCpadPulse(u16 command, u32 sequence, u32 cpadState, u32 aux)
+{
+    u32 holdMs = 0, settleMs = 0;
+    if (!validCirclePad(cpadState) || cpadState == POKEBOT_CPAD_NEUTRAL ||
+        !parseTiming(aux, &holdMs, &settleMs))
+        return POKEBOT_STATUS_INPUT_INVALID;
+    if (active())
+        return POKEBOT_STATUS_INPUT_BUSY;
+
+    memset(&sInput, 0, sizeof(sInput));
+    sInput.sequence = sequence;
+    sInput.command = command;
+    sInput.state = POKEBOT_INPUT_IN_PROGRESS;
+    sInput.rawHid = POKEBOT_HID_NEUTRAL;
+    sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+    sInput.cpadState = cpadState;
+    sInput.holdMs = holdMs;
+    sInput.settleMs = settleMs;
+    sInput.kind = POKEBOT_KIND_CPAD_PULSE;
+    sInput.phase = POKEBOT_PHASE_HELD;
+    sInput.deadlineMs = osGetTime() + holdMs;
+    PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
+    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+    PokebotInput_SetRemoteCircle(cpadState);
+    pokebotInputCommands++;
+    return POKEBOT_STATUS_OK;
+}
+
 u16 PokebotInputController_Handle(
     u16 command,
     u32 requestId,
@@ -46,6 +74,7 @@ source = r'''/*
  *   8 RELEASE_ALL
  *   9 TOUCH_PULSE
  *  10 HID_LATCH
+ *  13 CPAD_PULSE
  *
  * Pulse timing is owned by the 3DS. Duplicate sequence IDs are observational
  * and never create a second gameplay action. RELEASE_ALL neutralises only the
@@ -64,6 +93,7 @@ source = r'''/*
 #define POKEBOT_CMD_RELEASE_ALL  8
 #define POKEBOT_CMD_TOUCH_PULSE  9
 #define POKEBOT_CMD_HID_LATCH   10
+#define POKEBOT_CMD_CPAD_PULSE  13
 
 #define POKEBOT_STATUS_OK                  0
 #define POKEBOT_STATUS_BAD_COMMAND         3
@@ -84,6 +114,7 @@ source = r'''/*
 #define POKEBOT_KIND_HID_PULSE   1
 #define POKEBOT_KIND_TOUCH_PULSE 2
 #define POKEBOT_KIND_HID_LATCH   3
+#define POKEBOT_KIND_CPAD_PULSE  4
 
 #define POKEBOT_PHASE_NONE    0
 #define POKEBOT_PHASE_HELD    1
@@ -92,7 +123,8 @@ source = r'''/*
 
 #define POKEBOT_HID_NEUTRAL   0x00000FFFUL
 #define POKEBOT_TOUCH_NEUTRAL 0x02000000UL
-#define POKEBOT_INPUT_CAPS     0x000000CFUL
+#define POKEBOT_CPAD_NEUTRAL  0x007FF7FFUL
+#define POKEBOT_INPUT_CAPS     0x000001CFUL
 #define POKEBOT_MAX_HOLD_MS    5000UL
 #define POKEBOT_MAX_SETTLE_MS  5000UL
 
@@ -127,6 +159,7 @@ typedef struct PokebotInputRuntime
     u32 state;
     u32 rawHid;
     u32 touchState;
+    u32 cpadState;
     u32 holdMs;
     u32 settleMs;
     u32 kind;
@@ -162,6 +195,7 @@ static void neutral(void)
     PokebotInput_ResetRemote();
     sInput.rawHid = POKEBOT_HID_NEUTRAL;
     sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+    sInput.cpadState = POKEBOT_CPAD_NEUTRAL;
 }
 
 static u32 remainingMs(void)
@@ -211,9 +245,12 @@ void PokebotInputController_Update(void)
             PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
         else if (sInput.kind == POKEBOT_KIND_TOUCH_PULSE)
             PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+        else if (sInput.kind == POKEBOT_KIND_CPAD_PULSE)
+            PokebotInput_SetRemoteCircle(POKEBOT_CPAD_NEUTRAL);
 
         sInput.rawHid = POKEBOT_HID_NEUTRAL;
         sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+        sInput.cpadState = POKEBOT_CPAD_NEUTRAL;
 
         if (sInput.settleMs != 0)
         {
@@ -251,6 +288,7 @@ Result PokebotInputController_SetEnabled(bool enable)
         memset(&sInput, 0, sizeof(sInput));
         sInput.rawHid = POKEBOT_HID_NEUTRAL;
         sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+        sInput.cpadState = POKEBOT_CPAD_NEUTRAL;
         pokebotInputCommands = 0;
         pokebotInputControllerEnabled = true;
         pokebotInputControllerResult = 0;
@@ -281,6 +319,13 @@ Result PokebotInputController_SetEnabled(bool enable)
 static bool validRawHid(u32 rawHid)
 {
     return (rawHid & ~POKEBOT_HID_NEUTRAL) == 0;
+}
+
+static bool validCirclePad(u32 cpadState)
+{
+    u32 x = cpadState & 0xFFFUL;
+    u32 y = (cpadState >> 12) & 0xFFFUL;
+    return (cpadState & 0xFF000000UL) == 0 && x <= 0xFFFUL && y <= 0xFFFUL;
 }
 
 static bool parseTiming(u32 aux, u32 *holdMs, u32 *settleMs)
@@ -319,12 +364,14 @@ static u16 startHidPulse(u16 command, u32 sequence, u32 rawHid, u32 aux)
     sInput.state = POKEBOT_INPUT_IN_PROGRESS;
     sInput.rawHid = rawHid;
     sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+    sInput.cpadState = POKEBOT_CPAD_NEUTRAL;
     sInput.holdMs = holdMs;
     sInput.settleMs = settleMs;
     sInput.kind = POKEBOT_KIND_HID_PULSE;
     sInput.phase = POKEBOT_PHASE_HELD;
     sInput.deadlineMs = osGetTime() + holdMs;
     PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+    PokebotInput_SetRemoteCircle(POKEBOT_CPAD_NEUTRAL);
     PokebotInput_SetRemoteHid(rawHid);
     pokebotInputCommands++;
     return POKEBOT_STATUS_OK;
@@ -344,12 +391,14 @@ static u16 startTouchPulse(u16 command, u32 sequence, u32 touchState, u32 aux)
     sInput.state = POKEBOT_INPUT_IN_PROGRESS;
     sInput.rawHid = POKEBOT_HID_NEUTRAL;
     sInput.touchState = touchState;
+    sInput.cpadState = POKEBOT_CPAD_NEUTRAL;
     sInput.holdMs = holdMs;
     sInput.settleMs = settleMs;
     sInput.kind = POKEBOT_KIND_TOUCH_PULSE;
     sInput.phase = POKEBOT_PHASE_HELD;
     sInput.deadlineMs = osGetTime() + holdMs;
     PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
+    PokebotInput_SetRemoteCircle(POKEBOT_CPAD_NEUTRAL);
     PokebotInput_SetRemoteTouch(touchState);
     pokebotInputCommands++;
     return POKEBOT_STATUS_OK;
@@ -368,9 +417,11 @@ static u16 startHidLatch(u16 command, u32 sequence, u32 rawHid, u32 aux)
     sInput.state = POKEBOT_INPUT_IN_PROGRESS;
     sInput.rawHid = rawHid;
     sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+    sInput.cpadState = POKEBOT_CPAD_NEUTRAL;
     sInput.kind = POKEBOT_KIND_HID_LATCH;
     sInput.phase = POKEBOT_PHASE_LATCHED;
     PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+    PokebotInput_SetRemoteCircle(POKEBOT_CPAD_NEUTRAL);
     PokebotInput_SetRemoteHid(rawHid);
     pokebotInputCommands++;
     return POKEBOT_STATUS_OK;
@@ -468,6 +519,8 @@ u16 PokebotInputController_Handle(
         statusCode = startTouchPulse(command, requestId, argument, aux);
     else if (command == POKEBOT_CMD_HID_LATCH)
         statusCode = startHidLatch(command, requestId, argument, aux);
+    else if (command == POKEBOT_CMD_CPAD_PULSE)
+        statusCode = startCpadPulse(command, requestId, argument, aux);
 
     if (statusCode != POKEBOT_STATUS_OK)
         return statusCode;
@@ -505,6 +558,12 @@ void PokebotInput_SetRemoteTouch(u32 touchState)
     remote[6] = touchState;
 }
 
+void PokebotInput_SetRemoteCircle(u32 circleState)
+{
+    volatile u32 *remote = PA_FROM_VA_PTR(hidData);
+    remote[7] = circleState & 0x00FFFFFF;
+}
+
 void PokebotInput_ResetRemote(void)
 {
     volatile u32 *remote = PA_FROM_VA_PTR(hidData);
@@ -523,6 +582,7 @@ if "void PokebotInput_SetRemoteHid(u32 rawHid);" not in text:
 /* Pokebot-Luma v0p5 acknowledged-controller helpers. */
 void PokebotInput_SetRemoteHid(u32 rawHid);
 void PokebotInput_SetRemoteTouch(u32 touchState);
+void PokebotInput_SetRemoteCircle(u32 circleState);
 void PokebotInput_ResetRemote(void);
 ''' + "\n"
     input_h.write_text(text, encoding="utf-8")
@@ -540,7 +600,7 @@ route_marker = '    PokebotTarget target;\n'
 if 'PokebotInputController_Handle(' not in text:
     if route_marker not in text:
         raise SystemExit("bridge route marker not found")
-    route = r'''    if (req->command >= 5 && req->command <= 10)
+    route = r'''    if ((req->command >= 5 && req->command <= 10) || req->command == 13)
     {
         u8 inputPayload[32];
         u32 inputPayloadLength = 0;
