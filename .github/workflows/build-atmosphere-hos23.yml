@@ -35,6 +35,16 @@ jobs:
           sed -i '/RUN dkp-pacman -S switch-tools hactool --noconfirm && dkp-pacman -Syu --noconfirm/d' Dockerfile
           grep -q 'FROM devkitpro/devkita64:20260219' Dockerfile
 
+      - name: Add HOS 23 Mesosphere kernel version support
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd atmosphere
+          FILE="libraries/libvapours/include/vapours/svc/svc_version.hpp"
+          grep -q 'SupportedKernelMajorVersion = ConvertToSvcMajorVersion(22)' "$FILE"
+          sed -i 's/SupportedKernelMajorVersion = ConvertToSvcMajorVersion(22)/SupportedKernelMajorVersion = ConvertToSvcMajorVersion(23)/' "$FILE"
+          grep -q 'SupportedKernelMajorVersion = ConvertToSvcMajorVersion(23)' "$FILE"
+
       - name: Build upstream devkitA64 container
         shell: bash
         run: |
