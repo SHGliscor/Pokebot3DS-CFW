@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          docker run --rm --user 0:0 -v "$PWD/atmosphere:/src" -w /src atmosphere-hos23-23support bash -lc 'set -e; git config --global --add safe.directory /src; command -v hactool; command -v build_romfs; make -j$(nproc) dist-no-debug-nx_release'
+          docker run --rm --user 0:0 -v "$PWD/atmosphere:/src" -w /src atmosphere-hos23-23support bash -lc 'set -e; git config --global --add safe.directory /src; command -v hactool; command -v build_romfs; make -j1 dist-no-debug-nx_release'
 
       - name: Collect and verify outputs
         shell: bash
