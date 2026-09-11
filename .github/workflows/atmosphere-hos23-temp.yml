@@ -1,0 +1,65 @@
+name: Atmosphere HOS23 temporary build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    if: github.head_ref == 'atmosphere-hos23-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Fetch Atmosphere 23_support
+        run: |
+          git clone --recursive --branch 23_support --depth 1 https://github.com/Atmosphere-NX/Atmosphere.git atmosphere
+          cd atmosphere
+          git rev-parse HEAD
+          git submodule status
+
+      - name: Apply HOS 23 kernel ABI patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("atmosphere/libraries/libvapours/include/vapours/svc/svc_version.hpp")
+          s = p.read_text()
+          old = "constexpr inline u32 SupportedKernelMajorVersion = ConvertToSvcMajorVersion(22);"
+          new = "constexpr inline u32 SupportedKernelMajorVersion = ConvertToSvcMajorVersion(23);"
+          if old not in s:
+              raise SystemExit("Expected HOS22 SupportedKernelMajorVersion line not found")
+          p.write_text(s.replace(old, new, 1))
+          PY
+          grep -n "SupportedKernel" atmosphere/libraries/libvapours/include/vapours/svc/svc_version.hpp
+
+      - name: Build Atmosphere exact toolchain image
+        run: |
+          docker build -t atmosphere-hos23-builder atmosphere
+
+      - name: Compile package3 and fusee
+        run: |
+          mkdir -p artifacts
+          docker run --rm \
+            -v "$PWD/atmosphere:/work" \
+            -v "$PWD/artifacts:/artifacts" \
+            -w /work \
+            atmosphere-hos23-builder \
+            bash -lc 'set -e; make -j2 dist-no-debug-nx_release; cp out/nx_release/package3 /artifacts/package3; cp out/nx_release/fusee.bin /artifacts/fusee.bin; cp out/nx_release/atmosphere-*.zip /artifacts/ 2>/dev/null || true'
+
+      - name: Build metadata
+        run: |
+          {
+            echo "Base: Atmosphere-NX/Atmosphere 23_support"
+            echo -n "Commit: "
+            git -C atmosphere rev-parse HEAD
+            echo "Experimental kernel patch: SupportedKernelMajorVersion 22 -> 23 (ABI 27.2)"
+            sha256sum artifacts/* || true
+          } > artifacts/BUILDINFO.txt
+          cat artifacts/BUILDINFO.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Atmosphere-HOS23-experimental
+          path: artifacts/
+          if-no-files-found: error
