@@ -25,34 +25,6 @@ extern volatile u32 pokebotInputCommands;
 Result PokebotInputController_SetEnabled(bool enable);
 void PokebotInputController_Update(void);
 void PokebotInputController_ReleaseAll(void);
-static u16 startCpadPulse(u16 command, u32 sequence, u32 cpadState, u32 aux)
-{
-    u32 holdMs = 0, settleMs = 0;
-    if (!validCirclePad(cpadState) || cpadState == POKEBOT_CPAD_NEUTRAL ||
-        !parseTiming(aux, &holdMs, &settleMs))
-        return POKEBOT_STATUS_INPUT_INVALID;
-    if (active())
-        return POKEBOT_STATUS_INPUT_BUSY;
-
-    memset(&sInput, 0, sizeof(sInput));
-    sInput.sequence = sequence;
-    sInput.command = command;
-    sInput.state = POKEBOT_INPUT_IN_PROGRESS;
-    sInput.rawHid = POKEBOT_HID_NEUTRAL;
-    sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
-    sInput.cpadState = cpadState;
-    sInput.holdMs = holdMs;
-    sInput.settleMs = settleMs;
-    sInput.kind = POKEBOT_KIND_CPAD_PULSE;
-    sInput.phase = POKEBOT_PHASE_HELD;
-    sInput.deadlineMs = osGetTime() + holdMs;
-    PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
-    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
-    PokebotInput_SetRemoteCircle(cpadState);
-    pokebotInputCommands++;
-    return POKEBOT_STATUS_OK;
-}
-
 u16 PokebotInputController_Handle(
     u16 command,
     u32 requestId,
@@ -423,6 +395,34 @@ static u16 startHidLatch(u16 command, u32 sequence, u32 rawHid, u32 aux)
     PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
     PokebotInput_SetRemoteCircle(POKEBOT_CPAD_NEUTRAL);
     PokebotInput_SetRemoteHid(rawHid);
+    pokebotInputCommands++;
+    return POKEBOT_STATUS_OK;
+}
+
+static u16 startCpadPulse(u16 command, u32 sequence, u32 cpadState, u32 aux)
+{
+    u32 holdMs = 0, settleMs = 0;
+    if (!validCirclePad(cpadState) || cpadState == POKEBOT_CPAD_NEUTRAL ||
+        !parseTiming(aux, &holdMs, &settleMs))
+        return POKEBOT_STATUS_INPUT_INVALID;
+    if (active())
+        return POKEBOT_STATUS_INPUT_BUSY;
+
+    memset(&sInput, 0, sizeof(sInput));
+    sInput.sequence = sequence;
+    sInput.command = command;
+    sInput.state = POKEBOT_INPUT_IN_PROGRESS;
+    sInput.rawHid = POKEBOT_HID_NEUTRAL;
+    sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+    sInput.cpadState = cpadState;
+    sInput.holdMs = holdMs;
+    sInput.settleMs = settleMs;
+    sInput.kind = POKEBOT_KIND_CPAD_PULSE;
+    sInput.phase = POKEBOT_PHASE_HELD;
+    sInput.deadlineMs = osGetTime() + holdMs;
+    PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
+    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+    PokebotInput_SetRemoteCircle(cpadState);
     pokebotInputCommands++;
     return POKEBOT_STATUS_OK;
 }
