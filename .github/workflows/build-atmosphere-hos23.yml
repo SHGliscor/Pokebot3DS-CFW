@@ -1,0 +1,79 @@
+name: Atmosphere HOS 23 Cloud Build
+
+on:
+  push:
+    branches:
+      - atmosphere-hos23-cloud-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Clone pinned Atmosphere 23_support
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone --recursive https://github.com/Atmosphere-NX/Atmosphere.git atmosphere
+          cd atmosphere
+          git checkout --detach aad15daad6862f5fbbdccb159f6bdc26944e84c9
+          git submodule update --init --recursive
+          test "$(git rev-parse HEAD)" = "aad15daad6862f5fbbdccb159f6bdc26944e84c9"
+
+      - name: Build upstream devkitA64 container
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker build -t atmosphere-hos23-23support ./atmosphere
+
+      - name: Build Atmosphere release
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker run --rm             -v "$PWD/atmosphere:/src"             -w /src             atmosphere-hos23-23support             bash -lc 'make -j$(nproc) dist-no-debug-nx_release'
+
+      - name: Collect and verify outputs
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p dist
+
+          RELEASE="$(find atmosphere/out -type f -name 'atmosphere-*.zip' | sort | tail -n 1)"
+          FUSEE="$(find atmosphere/out -type f -name 'fusee.bin' | sort | tail -n 1)"
+
+          test -n "$RELEASE"
+          test -n "$FUSEE"
+          test -f "$RELEASE"
+          test -f "$FUSEE"
+
+          cp "$RELEASE" dist/
+          cp "$FUSEE" dist/fusee_HOS23_23support_aad15daa.bin
+
+          mkdir verify
+          unzip -q "$RELEASE" -d verify
+          test -f verify/atmosphere/package3
+
+          cp verify/atmosphere/package3 dist/package3_HOS23_23support_aad15daa
+
+          {
+            echo "Repository: Atmosphere-NX/Atmosphere"
+            echo "Branch: 23_support"
+            echo "Commit: aad15daad6862f5fbbdccb159f6bdc26944e84c9"
+            echo "Build target: dist-no-debug-nx_release"
+          } > dist/BUILD_INFO.txt
+
+          (cd dist && sha256sum * > SHA256SUMS.txt)
+
+      - name: Upload ready-to-test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Atmosphere-HOS23-23-support-aad15daa
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
