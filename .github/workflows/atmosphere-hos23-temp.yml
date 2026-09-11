@@ -44,7 +44,20 @@ jobs:
             -v "$PWD/artifacts:/artifacts" \
             -w /work \
             atmosphere-hos23-builder \
-            bash -lc 'set -e; make -j2 dist-no-debug-nx_release; cp out/nx_release/package3 /artifacts/package3; cp out/nx_release/fusee.bin /artifacts/fusee.bin; cp out/nx_release/atmosphere-*.zip /artifacts/ 2>/dev/null || true'
+            bash -lc '
+              set -e
+              make -j2 dist-no-debug-nx_release
+              pkg="$(find out -type f -name package3 -print -quit)"
+              fus="$(find out -type f -name fusee.bin -print -quit)"
+              test -n "$pkg"
+              test -n "$fus"
+              echo "package3=$pkg"
+              echo "fusee=$fus"
+              cp "$pkg" /artifacts/package3
+              cp "$fus" /artifacts/fusee.bin
+              zipfile="$(find out -type f -name "atmosphere-*.zip" -print -quit)"
+              if [ -n "$zipfile" ]; then cp "$zipfile" /artifacts/; fi
+            '
 
       - name: Build metadata
         run: |
