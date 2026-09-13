@@ -1,0 +1,87 @@
+name: Build Atmosphere PR 2842
+
+on:
+  push:
+    branches:
+      - build/atmosphere-pr2842
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:20260219
+    steps:
+      - name: Install host dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y git zip python3 python3-pip python3-lz4
+          dkp-pacman -Syu --noconfirm
+          dkp-pacman -S --needed --noconfirm switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules hactool switch-tools
+
+      - name: Check out exact PR head
+        uses: actions/checkout@v4
+        with:
+          repository: Flexii2000/Atmosphere
+          ref: cda3d46aa796cd949440afdb405663f65a737172
+          path: Atmosphere
+          fetch-depth: 1
+
+      - name: Record source identity
+        working-directory: Atmosphere
+        run: |
+          git rev-parse HEAD | tee ../SOURCE_SHA.txt
+          git log -1 --oneline | tee ../SOURCE_COMMIT.txt
+
+      - name: Build release distribution
+        working-directory: Atmosphere
+        run: |
+          make -j2 nx_release
+          make dist-no-debug-nx_release
+          mkdir -p ../artifacts/release
+          cp -av out/*.zip out/fusee.bin ../artifacts/release/ 2>/dev/null || true
+          find out -maxdepth 1 -type f -printf '%f\n' | sort | tee ../artifacts/release/FILES.txt
+
+      - name: Build debug distribution
+        working-directory: Atmosphere
+        run: |
+          make clean-nx_debug || true
+          make -j2 nx_debug
+          make -f atmosphere.mk dist ATMOSPHERE_MAKEFILE_TARGET=nx_debug ATMOSPHERE_BUILD_NAME=debug ATMOSPHERE_BOARD=nx-hac-001 ATMOSPHERE_CPU=arm-cortex-a57 ATMOSPHERE_BUILD_SETTINGS='-DAMS_BUILD_FOR_DEBUGGING' ATMOSPHERE_BUILD_FOR_DEBUGGING=1
+          mkdir -p ../artifacts/debug
+          cp -av out/*debug.zip ../artifacts/debug/ 2>/dev/null || true
+          find out -maxdepth 1 -type f -printf '%f\n' | sort | tee ../artifacts/debug/FILES.txt
+
+      - name: Build audit configuration
+        working-directory: Atmosphere
+        run: |
+          make clean-nx_audit || true
+          make -j2 nx_audit
+          mkdir -p ../artifacts/audit
+          find . -type f \( -path '*/out/*' -o -path '*/out_boot/*' \) \( -name '*.bin' -o -name '*.kip' -o -name '*.nsp' -o -name '*.nro' -o -name '*.elf' \) -print0 | tar --null -T - -czf ../artifacts/audit/atmosphere-pr2842-audit-build-products.tar.gz
+
+      - name: Create manifest and checksums
+        run: |
+          printf 'PR: Atmosphere-NX/Atmosphere#2842\nHead: Flexii2000/Atmosphere 23_support_pt2\nCommit: cda3d46aa796cd949440afdb405663f65a737172\nClassification: compile output from PR prototype; not independently boot-tested by this workflow.\n' > artifacts/BUILD_INFO.txt
+          cd artifacts
+          find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          zip -r ../Atmosphere_PR2842_HOS23_builds.zip .
+
+      - name: Upload complete build bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Atmosphere_PR2842_HOS23_builds
+          path: Atmosphere_PR2842_HOS23_builds.zip
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload raw release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: Atmosphere_PR2842_release_raw
+          path: artifacts/release/*
+          if-no-files-found: error
+          retention-days: 7
