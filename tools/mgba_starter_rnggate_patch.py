@@ -8,7 +8,8 @@ GATE_CODE = r"""
 #define PB3_RUBY_GMAIN_CB2_ADDR 0x03001774u
 #define PB3_RUBY_STARTER_CB2 0x08109EA0u
 #define PB3_STARTER_HISTORY_CAPACITY 32768u
-#define PB3_STARTER_GUARD_CALLS 64u
+#define PB3_STARTER_GUARD_DEFAULT 64u
+#define PB3_STARTER_GUARD_MAX 512u
 #define PB3_RNG_A 0x41C64E6Du
 #define PB3_RNG_C 0x00006073u
 #define PB3_RNG_A_INV 0xEEB9EB65u
@@ -22,6 +23,7 @@ static bool pb3StarterHistoryHasZero = false;
 static unsigned pb3StarterHistoryCount = 0;
 static unsigned pb3StarterSeedArms = 0;
 static unsigned pb3StarterSeedChanges = 0;
+static unsigned pb3StarterGuardCalls = PB3_STARTER_GUARD_DEFAULT;
 static unsigned pb3StarterDelayFrames = 0;
 static unsigned pb3StarterFrames = 0;
 static unsigned pb3StarterBlocked = 0;
@@ -86,7 +88,7 @@ static int _pb3StarterHistoryDistance(uint32_t value) {
 
 	uint32_t forward = value;
 	uint32_t backward = value;
-	for (unsigned distance = 1; distance <= PB3_STARTER_GUARD_CALLS; ++distance) {
+	for (unsigned distance = 1; distance <= pb3StarterGuardCalls; ++distance) {
 		forward = _pb3RngNext(forward);
 		if (_pb3StarterHistoryContains(forward)) return (int) distance;
 
@@ -226,11 +228,14 @@ COMMAND_CODE = r"""
 
 		unsigned seed = 0;
 		unsigned delay = 0;
-		if (sscanf(cmd + 12, "%x %u", &seed, &delay) < 1) {
+		unsigned guard = PB3_STARTER_GUARD_DEFAULT;
+		if (sscanf(cmd + 12, "%x %u %u", &seed, &delay, &guard) < 1) {
 			_pb3Send(&peer, peerLen, "PB3 ERR STARTER_ARM_SYNTAX");
 			return;
 		}
 		if (delay > 240u) delay = 240u;
+		if (guard > PB3_STARTER_GUARD_MAX) guard = PB3_STARTER_GUARD_MAX;
+		pb3StarterGuardCalls = guard;
 		uint16_t seed16 = (uint16_t) (seed & 0xFFFFu);
 		if (pb3StarterHistoryCount >= PB3_STARTER_HISTORY_CAPACITY) {
 			_pb3Send(&peer, peerLen, "PB3 ERR STARTER_HISTORY_FULL");
@@ -261,7 +266,7 @@ COMMAND_CODE = r"""
 			out, sizeof(out),
 			"PB3 OK STARTER_ARM SEED=%04X DELAY=%u SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u GUARD=%u",
 			pb3StarterSeed, pb3StarterDelayFrames, pb3StarterHistoryCount,
-			pb3StarterSeedArms, pb3StarterSeedChanges, PB3_STARTER_GUARD_CALLS
+			pb3StarterSeedArms, pb3StarterSeedChanges, pb3StarterGuardCalls
 		);
 		_pb3Send(&peer, peerLen, out);
 #else
@@ -286,7 +291,7 @@ COMMAND_CODE = r"""
 				pb3StarterBlockedTotal,
 				pb3StarterNearBlockedTotal,
 				pb3StarterLastDistance,
-				PB3_STARTER_GUARD_CALLS,
+				pb3StarterGuardCalls,
 				pb3StarterFrames,
 				PB3_STARTER_HISTORY_CAPACITY
 			);
@@ -303,7 +308,7 @@ COMMAND_CODE = r"""
 				pb3StarterBlockedTotal,
 				pb3StarterNearBlockedTotal,
 				pb3StarterLastDistance,
-				PB3_STARTER_GUARD_CALLS,
+				pb3StarterGuardCalls,
 				pb3StarterFrames,
 				PB3_STARTER_HISTORY_CAPACITY
 			);
@@ -317,7 +322,7 @@ COMMAND_CODE = r"""
 				pb3StarterSeedChanges,
 				pb3StarterBlockedTotal,
 				pb3StarterNearBlockedTotal,
-				PB3_STARTER_GUARD_CALLS,
+				pb3StarterGuardCalls,
 				PB3_STARTER_HISTORY_CAPACITY
 			);
 		}
