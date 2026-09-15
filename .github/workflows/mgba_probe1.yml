@@ -1,4 +1,4 @@
-name: Build Pokebot3DS-CFW mGBA Probe 1
+name: Build Pokebot3DS-CFW mGBA Fast Override
 
 on:
   workflow_dispatch:
@@ -7,6 +7,7 @@ on:
       - mgba-probe1
     paths:
       - "tools/mgba_probe1_patch.py"
+      - "tools/mgba_fastoverride_patch.py"
       - ".github/workflows/mgba_probe1.yml"
 
 jobs:
@@ -25,11 +26,15 @@ jobs:
           cd upstream
           git checkout a1020b0e72e90d56d4779efcdf776aa9c1450fe1
 
-      - name: Apply Probe 1 patch
+      - name: Apply Probe 1 bridge
         run: |
           python3 tools/mgba_probe1_patch.py upstream/src/platform/3ds/main.c
 
-      - name: Apply persistent FAST bridge override\n        run: |\n          python3 tools/mgba_fastoverride_patch.py upstream/src/platform/3ds/main.c\n\n      - name: Build with official mGBA 3DS Docker image
+      - name: Apply persistent FAST bridge override
+        run: |
+          python3 tools/mgba_fastoverride_patch.py upstream/src/platform/3ds/main.c
+
+      - name: Build with official mGBA 3DS Docker image
         run: |
           chmod -R a+rwx upstream
           docker pull mgba/3ds
