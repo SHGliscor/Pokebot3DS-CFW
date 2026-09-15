@@ -240,11 +240,11 @@ def main():
         print("Starter RNG gate patch already applied")
         return
 
-    rtc_marker = "/* ===== end Pokebot3DS-CFW mGBA RTC diagnostics ===== */"
+    poll_marker = "static void _pb3BridgePoll(struct mGUIRunner* runner) {"
     text = replace_once(
         text,
-        rtc_marker,
-        rtc_marker + "\n\n" + GATE_CODE,
+        poll_marker,
+        GATE_CODE + "\n\n" + poll_marker,
         "starter gate helper insertion",
     )
 
