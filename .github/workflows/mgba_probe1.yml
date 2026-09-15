@@ -1,4 +1,4 @@
-name: Build Pokebot3DS-CFW mGBA Fast Override
+name: Build Pokebot3DS-CFW mGBA RTC Probe
 
 on:
   workflow_dispatch:
@@ -34,7 +34,7 @@ jobs:
         run: |
           python3 tools/mgba_fastoverride_patch.py upstream/src/platform/3ds/main.c
 
-      - name: Build with official mGBA 3DS Docker image
+      - name: Apply RTC diagnostics bridge\n        run: |\n          python3 tools/mgba_rtcprobe_patch.py upstream/src/platform/3ds/main.c\n\n      - name: Build with official mGBA 3DS Docker image
         run: |
           chmod -R a+rwx upstream
           docker pull mgba/3ds
@@ -52,13 +52,13 @@ jobs:
           THREE="$(find upstream -type f -name '*.3dsx' | head -n 1)"
           test -n "$CIA"
           test -n "$THREE"
-          cp "$CIA" "dist/Pokebot3DS-CFW-mGBA-FastOverride.cia"
-          cp "$THREE" "dist/Pokebot3DS-CFW-mGBA-FastOverride.3dsx"
+          cp "$CIA" "dist/Pokebot3DS-CFW-mGBA-RTCProbe.cia"
+          cp "$THREE" "dist/Pokebot3DS-CFW-mGBA-RTCProbe.3dsx"
           sha256sum dist/* > dist/SHA256SUMS.txt
 
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot3DS-CFW-mGBA-FastOverride
+          name: Pokebot3DS-CFW-mGBA-RTCProbe
           path: dist/*
           if-no-files-found: error
