@@ -5,6 +5,8 @@ import sys
 GATE_CODE = r"""
 /* ===== Pokebot3DS-CFW mGBA Ruby starter RNG gate ===== */
 #define PB3_RUBY_RNG_ADDR 0x03004818u
+#define PB3_RUBY_GMAIN_CB2_ADDR 0x03001774u
+#define PB3_RUBY_STARTER_CB2 0x08109EA0u
 #define PB3_STARTER_HISTORY_MAX 128u
 
 static bool pb3StarterArmed = false;
@@ -83,6 +85,50 @@ static void _pb3StarterGateTick(struct mGUIRunner* runner) {
 """
 
 COMMAND_CODE = r"""
+
+	if (!strncmp(cmd, "KEY1 ", 5)) {
+		char name[16] = {0};
+		if (sscanf(cmd + 5, "%15s", name) < 1) {
+			_pb3Send(&peer, peerLen, "PB3 ERR KEY1_SYNTAX");
+			return;
+		}
+		uint16_t mask = _pb3KeyMask(name);
+		if (!mask) {
+			_pb3Send(&peer, peerLen, "PB3 ERR KEY1_NAME");
+			return;
+		}
+		pb3StarterOneShotKeys |= mask;
+		char out[64];
+		snprintf(out, sizeof(out), "PB3 OK KEY1 %s", name);
+		_pb3Send(&peer, peerLen, out);
+		return;
+	}
+
+	if (!strcmp(cmd, "STARTER_OPEN")) {
+#ifdef M_CORE_GBA
+		struct mGameInfo info;
+		memset(&info, 0, sizeof(info));
+		runner->core->getGameInfo(runner->core, &info);
+		if (strcmp(info.code, "AXVE")) {
+			_pb3Send(&peer, peerLen, "PB3 ERR STARTER_UNSUPPORTED_GAME");
+			return;
+		}
+
+		uint32_t cb2 = _pb3Read32(runner, PB3_RUBY_GMAIN_CB2_ADDR) & ~1u;
+		char out[96];
+		if (cb2 == PB3_RUBY_STARTER_CB2) {
+			snprintf(out, sizeof(out), "PB3 STARTER_OPEN SCREEN CB=%08lX", (unsigned long) cb2);
+		} else {
+			pb3StarterOneShotKeys |= (1u << GBA_KEY_A);
+			snprintf(out, sizeof(out), "PB3 STARTER_OPEN PRESSED CB=%08lX", (unsigned long) cb2);
+		}
+		_pb3Send(&peer, peerLen, out);
+#else
+		_pb3Send(&peer, peerLen, "PB3 ERR NOT_GBA");
+#endif
+		return;
+	}
+
 	if (!strncmp(cmd, "STARTER_ARM ", 12)) {
 #ifdef M_CORE_GBA
 		struct mGameInfo info;
