@@ -7,17 +7,21 @@ GATE_CODE = r"""
 #define PB3_RUBY_RNG_ADDR 0x03004818u
 #define PB3_RUBY_GMAIN_CB2_ADDR 0x03001774u
 #define PB3_RUBY_STARTER_CB2 0x08109EA0u
-#define PB3_STARTER_HISTORY_MAX 128u
+#define PB3_STARTER_HISTORY_CAPACITY 32768u
 
 static bool pb3StarterArmed = false;
 static bool pb3StarterResultReady = false;
 static uint16_t pb3StarterSeed = 0;
-static uint16_t pb3StarterHistorySeed = 0xFFFFu;
-static uint32_t pb3StarterHistory[PB3_STARTER_HISTORY_MAX];
+static uint16_t pb3StarterCurrentSeed = 0xFFFFu;
+static uint32_t pb3StarterHistory[PB3_STARTER_HISTORY_CAPACITY];
+static bool pb3StarterHistoryHasZero = false;
 static unsigned pb3StarterHistoryCount = 0;
+static unsigned pb3StarterSeedArms = 0;
+static unsigned pb3StarterSeedChanges = 0;
 static unsigned pb3StarterDelayFrames = 0;
 static unsigned pb3StarterFrames = 0;
 static unsigned pb3StarterBlocked = 0;
+static unsigned pb3StarterBlockedTotal = 0;
 static uint32_t pb3StarterConfirmedRng = 0;
 static uint16_t pb3StarterOneShotKeys = 0;
 
@@ -30,29 +34,57 @@ static uint32_t _pb3Read32(struct mGUIRunner* runner, uint32_t address) {
 	return value;
 }
 
+static unsigned _pb3StarterHistoryHash(uint32_t value) {
+	value ^= value >> 16;
+	value *= 0x7FEB352Du;
+	value ^= value >> 15;
+	value *= 0x846CA68Bu;
+	value ^= value >> 16;
+	return value & (PB3_STARTER_HISTORY_CAPACITY - 1u);
+}
+
 static bool _pb3StarterHistoryContains(uint32_t value) {
-	for (unsigned i = 0; i < pb3StarterHistoryCount; ++i) {
-		if (pb3StarterHistory[i] == value) return true;
+	if (value == 0) return pb3StarterHistoryHasZero;
+	unsigned slot = _pb3StarterHistoryHash(value);
+	for (unsigned i = 0; i < PB3_STARTER_HISTORY_CAPACITY; ++i) {
+		uint32_t current = pb3StarterHistory[slot];
+		if (current == 0) return false;
+		if (current == value) return true;
+		slot = (slot + 1u) & (PB3_STARTER_HISTORY_CAPACITY - 1u);
 	}
 	return false;
 }
 
-static void _pb3StarterHistoryReset(uint16_t seed) {
-	pb3StarterHistorySeed = seed;
+static void _pb3StarterHistoryReset(void) {
+	pb3StarterCurrentSeed = 0xFFFFu;
+	pb3StarterHistoryHasZero = false;
 	pb3StarterHistoryCount = 0;
+	pb3StarterSeedArms = 0;
+	pb3StarterSeedChanges = 0;
+	pb3StarterBlockedTotal = 0;
 	memset(pb3StarterHistory, 0, sizeof(pb3StarterHistory));
 }
 
-static void _pb3StarterHistoryAdd(uint32_t value) {
-	if (pb3StarterHistoryCount >= PB3_STARTER_HISTORY_MAX) {
-		memmove(
-			&pb3StarterHistory[0],
-			&pb3StarterHistory[1],
-			(PB3_STARTER_HISTORY_MAX - 1u) * sizeof(pb3StarterHistory[0])
-		);
-		pb3StarterHistoryCount = PB3_STARTER_HISTORY_MAX - 1u;
+static bool _pb3StarterHistoryAdd(uint32_t value) {
+	if (_pb3StarterHistoryContains(value)) return true;
+	if (pb3StarterHistoryCount >= PB3_STARTER_HISTORY_CAPACITY) return false;
+
+	if (value == 0) {
+		pb3StarterHistoryHasZero = true;
+		++pb3StarterHistoryCount;
+		return true;
 	}
-	pb3StarterHistory[pb3StarterHistoryCount++] = value;
+
+	unsigned slot = _pb3StarterHistoryHash(value);
+	for (unsigned i = 0; i < PB3_STARTER_HISTORY_CAPACITY; ++i) {
+		if (pb3StarterHistory[slot] == 0) {
+			pb3StarterHistory[slot] = value;
+			++pb3StarterHistoryCount;
+			return true;
+		}
+		slot = (slot + 1u) & (PB3_STARTER_HISTORY_CAPACITY - 1u);
+	}
+	return false;
 }
 
 static void _pb3StarterGateTick(struct mGUIRunner* runner) {
@@ -69,10 +101,14 @@ static void _pb3StarterGateTick(struct mGUIRunner* runner) {
 	uint32_t rng = _pb3Read32(runner, PB3_RUBY_RNG_ADDR);
 	if (_pb3StarterHistoryContains(rng)) {
 		++pb3StarterBlocked;
+		++pb3StarterBlockedTotal;
 		return;
 	}
 
-	_pb3StarterHistoryAdd(rng);
+	if (!_pb3StarterHistoryAdd(rng)) {
+		pb3StarterArmed = false;
+		return;
+	}
 	pb3StarterConfirmedRng = rng;
 	pb3StarterArmed = false;
 	pb3StarterResultReady = true;
@@ -147,8 +183,19 @@ COMMAND_CODE = r"""
 		}
 		if (delay > 240u) delay = 240u;
 		uint16_t seed16 = (uint16_t) (seed & 0xFFFFu);
-		if (pb3StarterHistorySeed != seed16) {
-			_pb3StarterHistoryReset(seed16);
+		if (pb3StarterHistoryCount >= PB3_STARTER_HISTORY_CAPACITY) {
+			_pb3Send(&peer, peerLen, "PB3 ERR STARTER_HISTORY_FULL");
+			return;
+		}
+		if (pb3StarterCurrentSeed == 0xFFFFu) {
+			pb3StarterCurrentSeed = seed16;
+			pb3StarterSeedArms = 1;
+		} else if (pb3StarterCurrentSeed != seed16) {
+			pb3StarterCurrentSeed = seed16;
+			pb3StarterSeedArms = 1;
+			++pb3StarterSeedChanges;
+		} else {
+			++pb3StarterSeedArms;
 		}
 
 		pb3StarterSeed = seed16;
@@ -161,8 +208,9 @@ COMMAND_CODE = r"""
 		char out[128];
 		snprintf(
 			out, sizeof(out),
-			"PB3 OK STARTER_ARM SEED=%04X DELAY=%u USED=%u",
-			pb3StarterSeed, pb3StarterDelayFrames, pb3StarterHistoryCount
+			"PB3 OK STARTER_ARM SEED=%04X DELAY=%u SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u",
+			pb3StarterSeed, pb3StarterDelayFrames, pb3StarterHistoryCount,
+			pb3StarterSeedArms, pb3StarterSeedChanges
 		);
 		_pb3Send(&peer, peerLen, out);
 #else
@@ -176,28 +224,38 @@ COMMAND_CODE = r"""
 		if (pb3StarterResultReady) {
 			snprintf(
 				out, sizeof(out),
-				"PB3 STARTER_RESULT READY SEED=%04X RNG=%08lX USED=%u BLOCKED=%u FRAMES=%u",
+				"PB3 STARTER_RESULT READY SEED=%04X RNG=%08lX SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED=%u BLOCKED_TOTAL=%u FRAMES=%u",
 				pb3StarterSeed,
 				(unsigned long) pb3StarterConfirmedRng,
 				pb3StarterHistoryCount,
+				pb3StarterSeedArms,
+				pb3StarterSeedChanges,
 				pb3StarterBlocked,
+				pb3StarterBlockedTotal,
 				pb3StarterFrames
 			);
 		} else if (pb3StarterArmed) {
 			snprintf(
 				out, sizeof(out),
-				"PB3 STARTER_RESULT PENDING SEED=%04X USED=%u BLOCKED=%u FRAMES=%u",
+				"PB3 STARTER_RESULT PENDING SEED=%04X SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED=%u BLOCKED_TOTAL=%u FRAMES=%u",
 				pb3StarterSeed,
 				pb3StarterHistoryCount,
+				pb3StarterSeedArms,
+				pb3StarterSeedChanges,
 				pb3StarterBlocked,
+				pb3StarterBlockedTotal,
 				pb3StarterFrames
 			);
 		} else {
 			snprintf(
 				out, sizeof(out),
-				"PB3 STARTER_RESULT IDLE SEED=%04X USED=%u",
-				pb3StarterHistorySeed == 0xFFFFu ? 0u : pb3StarterHistorySeed,
-				pb3StarterHistoryCount
+				"PB3 STARTER_RESULT IDLE SEED=%04X SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED_TOTAL=%u CAPACITY=%u",
+				pb3StarterCurrentSeed == 0xFFFFu ? 0u : pb3StarterCurrentSeed,
+				pb3StarterHistoryCount,
+				pb3StarterSeedArms,
+				pb3StarterSeedChanges,
+				pb3StarterBlockedTotal,
+				PB3_STARTER_HISTORY_CAPACITY
 			);
 		}
 		_pb3Send(&peer, peerLen, out);
@@ -216,7 +274,7 @@ COMMAND_CODE = r"""
 		pb3StarterArmed = false;
 		pb3StarterResultReady = false;
 		pb3StarterOneShotKeys = 0;
-		_pb3StarterHistoryReset(0xFFFFu);
+		_pb3StarterHistoryReset();
 		_pb3Send(&peer, peerLen, "PB3 OK STARTER_CLEAR");
 		return;
 	}
