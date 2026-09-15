@@ -8,6 +8,10 @@ GATE_CODE = r"""
 #define PB3_RUBY_GMAIN_CB2_ADDR 0x03001774u
 #define PB3_RUBY_STARTER_CB2 0x08109EA0u
 #define PB3_STARTER_HISTORY_CAPACITY 32768u
+#define PB3_STARTER_GUARD_CALLS 64u
+#define PB3_RNG_A 0x41C64E6Du
+#define PB3_RNG_C 0x00006073u
+#define PB3_RNG_A_INV 0xEEB9EB65u
 
 static bool pb3StarterArmed = false;
 static bool pb3StarterResultReady = false;
@@ -21,7 +25,10 @@ static unsigned pb3StarterSeedChanges = 0;
 static unsigned pb3StarterDelayFrames = 0;
 static unsigned pb3StarterFrames = 0;
 static unsigned pb3StarterBlocked = 0;
+static unsigned pb3StarterNearBlocked = 0;
 static unsigned pb3StarterBlockedTotal = 0;
+static unsigned pb3StarterNearBlockedTotal = 0;
+static int pb3StarterLastDistance = 0;
 static uint32_t pb3StarterConfirmedRng = 0;
 static uint16_t pb3StarterOneShotKeys = 0;
 
@@ -55,6 +62,40 @@ static bool _pb3StarterHistoryContains(uint32_t value) {
 	return false;
 }
 
+static uint32_t _pb3RngNext(uint32_t value) {
+	return PB3_RNG_A * value + PB3_RNG_C;
+}
+
+static uint32_t _pb3RngPrev(uint32_t value) {
+	return PB3_RNG_A_INV * (value - PB3_RNG_C);
+}
+
+/* Return signed LCG-call distance to a used confirmation state.
+ *  0  = exact reuse
+ * +N  = candidate is N calls before a used state
+ * -N  = candidate is N calls after a used state
+ * 9999 = outside the guard band
+ *
+ * The guard exists because hardware evidence showed the same generated PID
+ * arising from confirmation states 1-2 LCG calls apart: Ruby consumed a
+ * different number of Random() calls between A confirmation and Random32().
+ * Exact-value uniqueness alone therefore cannot guarantee unique generations.
+ */
+static int _pb3StarterHistoryDistance(uint32_t value) {
+	if (_pb3StarterHistoryContains(value)) return 0;
+
+	uint32_t forward = value;
+	uint32_t backward = value;
+	for (unsigned distance = 1; distance <= PB3_STARTER_GUARD_CALLS; ++distance) {
+		forward = _pb3RngNext(forward);
+		if (_pb3StarterHistoryContains(forward)) return (int) distance;
+
+		backward = _pb3RngPrev(backward);
+		if (_pb3StarterHistoryContains(backward)) return -(int) distance;
+	}
+	return 9999;
+}
+
 static void _pb3StarterHistoryReset(void) {
 	pb3StarterCurrentSeed = 0xFFFFu;
 	pb3StarterHistoryHasZero = false;
@@ -62,6 +103,8 @@ static void _pb3StarterHistoryReset(void) {
 	pb3StarterSeedArms = 0;
 	pb3StarterSeedChanges = 0;
 	pb3StarterBlockedTotal = 0;
+	pb3StarterNearBlockedTotal = 0;
+	pb3StarterLastDistance = 0;
 	memset(pb3StarterHistory, 0, sizeof(pb3StarterHistory));
 }
 
@@ -99,9 +142,15 @@ static void _pb3StarterGateTick(struct mGUIRunner* runner) {
 	if (pb3StarterFrames <= pb3StarterDelayFrames) return;
 
 	uint32_t rng = _pb3Read32(runner, PB3_RUBY_RNG_ADDR);
-	if (_pb3StarterHistoryContains(rng)) {
+	int distance = _pb3StarterHistoryDistance(rng);
+	if (distance != 9999) {
 		++pb3StarterBlocked;
 		++pb3StarterBlockedTotal;
+		pb3StarterLastDistance = distance;
+		if (distance != 0) {
+			++pb3StarterNearBlocked;
+			++pb3StarterNearBlockedTotal;
+		}
 		return;
 	}
 
@@ -202,15 +251,17 @@ COMMAND_CODE = r"""
 		pb3StarterDelayFrames = delay;
 		pb3StarterFrames = 0;
 		pb3StarterBlocked = 0;
+		pb3StarterNearBlocked = 0;
+		pb3StarterLastDistance = 0;
 		pb3StarterResultReady = false;
 		pb3StarterArmed = true;
 
-		char out[128];
+		char out[320];
 		snprintf(
 			out, sizeof(out),
-			"PB3 OK STARTER_ARM SEED=%04X DELAY=%u SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u",
+			"PB3 OK STARTER_ARM SEED=%04X DELAY=%u SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u GUARD=%u",
 			pb3StarterSeed, pb3StarterDelayFrames, pb3StarterHistoryCount,
-			pb3StarterSeedArms, pb3StarterSeedChanges
+			pb3StarterSeedArms, pb3StarterSeedChanges, PB3_STARTER_GUARD_CALLS
 		);
 		_pb3Send(&peer, peerLen, out);
 #else
@@ -224,37 +275,49 @@ COMMAND_CODE = r"""
 		if (pb3StarterResultReady) {
 			snprintf(
 				out, sizeof(out),
-				"PB3 STARTER_RESULT READY SEED=%04X RNG=%08lX SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED=%u BLOCKED_TOTAL=%u FRAMES=%u",
+				"PB3 STARTER_RESULT READY SEED=%04X RNG=%08lX SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED=%u NEAR=%u BLOCKED_TOTAL=%u NEAR_TOTAL=%u LAST_DIST=%d GUARD=%u FRAMES=%u CAPACITY=%u",
 				pb3StarterSeed,
 				(unsigned long) pb3StarterConfirmedRng,
 				pb3StarterHistoryCount,
 				pb3StarterSeedArms,
 				pb3StarterSeedChanges,
 				pb3StarterBlocked,
+				pb3StarterNearBlocked,
 				pb3StarterBlockedTotal,
-				pb3StarterFrames
+				pb3StarterNearBlockedTotal,
+				pb3StarterLastDistance,
+				PB3_STARTER_GUARD_CALLS,
+				pb3StarterFrames,
+				PB3_STARTER_HISTORY_CAPACITY
 			);
 		} else if (pb3StarterArmed) {
 			snprintf(
 				out, sizeof(out),
-				"PB3 STARTER_RESULT PENDING SEED=%04X SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED=%u BLOCKED_TOTAL=%u FRAMES=%u",
+				"PB3 STARTER_RESULT PENDING SEED=%04X SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED=%u NEAR=%u BLOCKED_TOTAL=%u NEAR_TOTAL=%u LAST_DIST=%d GUARD=%u FRAMES=%u CAPACITY=%u",
 				pb3StarterSeed,
 				pb3StarterHistoryCount,
 				pb3StarterSeedArms,
 				pb3StarterSeedChanges,
 				pb3StarterBlocked,
+				pb3StarterNearBlocked,
 				pb3StarterBlockedTotal,
-				pb3StarterFrames
+				pb3StarterNearBlockedTotal,
+				pb3StarterLastDistance,
+				PB3_STARTER_GUARD_CALLS,
+				pb3StarterFrames,
+				PB3_STARTER_HISTORY_CAPACITY
 			);
 		} else {
 			snprintf(
 				out, sizeof(out),
-				"PB3 STARTER_RESULT IDLE SEED=%04X SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED_TOTAL=%u CAPACITY=%u",
+				"PB3 STARTER_RESULT IDLE SEED=%04X SESSION_USED=%u SEED_ARMS=%u SEED_CHANGES=%u BLOCKED_TOTAL=%u NEAR_TOTAL=%u GUARD=%u CAPACITY=%u",
 				pb3StarterCurrentSeed == 0xFFFFu ? 0u : pb3StarterCurrentSeed,
 				pb3StarterHistoryCount,
 				pb3StarterSeedArms,
 				pb3StarterSeedChanges,
 				pb3StarterBlockedTotal,
+				pb3StarterNearBlockedTotal,
+				PB3_STARTER_GUARD_CALLS,
 				PB3_STARTER_HISTORY_CAPACITY
 			);
 		}
