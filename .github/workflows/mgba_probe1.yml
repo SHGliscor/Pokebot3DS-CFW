@@ -1,4 +1,4 @@
-name: Build Pokebot3DS-CFW mGBA RTC Probe
+name: Build Pokebot3DS-CFW mGBA Starter RNG Gate
 
 on:
   workflow_dispatch:
@@ -8,6 +8,8 @@ on:
     paths:
       - "tools/mgba_probe1_patch.py"
       - "tools/mgba_fastoverride_patch.py"
+      - "tools/mgba_rtcprobe_patch.py"
+      - "tools/mgba_starter_rnggate_patch.py"
       - ".github/workflows/mgba_probe1.yml"
 
 jobs:
@@ -34,7 +36,24 @@ jobs:
         run: |
           python3 tools/mgba_fastoverride_patch.py upstream/src/platform/3ds/main.c
 
-      - name: Apply RTC diagnostics bridge\n        run: |\n          python3 tools/mgba_rtcprobe_patch.py upstream/src/platform/3ds/main.c\n\n      - name: Build with official mGBA 3DS Docker image
+      - name: Apply RTC diagnostics bridge
+        run: |
+          python3 tools/mgba_rtcprobe_patch.py upstream/src/platform/3ds/main.c
+
+      - name: Apply Ruby starter frame-local RNG gate
+        run: |
+          python3 tools/mgba_starter_rnggate_patch.py upstream/src/platform/3ds/main.c
+
+      - name: Verify bridge patches
+        run: |
+          grep -q "Pokebot3DS-CFW mGBA Probe 1 bridge" upstream/src/platform/3ds/main.c
+          grep -q "pb3FastOverride" upstream/src/platform/3ds/main.c
+          grep -q "Pokebot3DS-CFW mGBA RTC diagnostics" upstream/src/platform/3ds/main.c
+          grep -q "Pokebot3DS-CFW mGBA Ruby starter RNG gate" upstream/src/platform/3ds/main.c
+          grep -q "STARTER_ARM" upstream/src/platform/3ds/main.c
+          grep -q "STARTER_RESULT" upstream/src/platform/3ds/main.c
+
+      - name: Build with official mGBA 3DS Docker image
         run: |
           chmod -R a+rwx upstream
           docker pull mgba/3ds
@@ -52,13 +71,13 @@ jobs:
           THREE="$(find upstream -type f -name '*.3dsx' | head -n 1)"
           test -n "$CIA"
           test -n "$THREE"
-          cp "$CIA" "dist/Pokebot3DS-CFW-mGBA-RTCProbe.cia"
-          cp "$THREE" "dist/Pokebot3DS-CFW-mGBA-RTCProbe.3dsx"
+          cp "$CIA" "dist/Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p11.cia"
+          cp "$THREE" "dist/Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p11.3dsx"
           sha256sum dist/* > dist/SHA256SUMS.txt
 
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot3DS-CFW-mGBA-RTCProbe
+          name: Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p11
           path: dist/*
           if-no-files-found: error
