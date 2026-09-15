@@ -49,9 +49,10 @@ jobs:
           grep -q "Pokebot3DS-CFW mGBA Probe 1 bridge" upstream/src/platform/3ds/main.c
           grep -q "pb3FastOverride" upstream/src/platform/3ds/main.c
           grep -q "Pokebot3DS-CFW mGBA RTC diagnostics" upstream/src/platform/3ds/main.c
-          grep -q "Pokebot3DS-CFW mGBA Ruby starter RNG gate" upstream/src/platform/3ds/main.c
+          grep -q "Pokebot3DS-CFW mGBA Ruby starter generation-aware RNG gate" upstream/src/platform/3ds/main.c
           grep -q "STARTER_ARM" upstream/src/platform/3ds/main.c
           grep -q "STARTER_RESULT" upstream/src/platform/3ds/main.c
+          grep -q "STARTER_RECORD" upstream/src/platform/3ds/main.c
 
       - name: Build with official mGBA 3DS Docker image
         run: |
