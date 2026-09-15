@@ -122,11 +122,11 @@ def main():
         "time include",
     )
 
-    marker = "/* ===== end Pokebot3DS-CFW mGBA Probe 1 bridge ===== */"
+    poll_marker = "static void _pb3BridgePoll(struct mGUIRunner* runner) {"
     text = replace_once(
         text,
-        marker,
-        marker + "\n\n" + RTC_CODE,
+        poll_marker,
+        RTC_CODE + "\n\n" + poll_marker,
         "RTC helper insertion",
     )
 
