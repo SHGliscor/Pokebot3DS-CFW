@@ -1,4 +1,4 @@
-name: Build Pokebot3DS-CFW mGBA Starter RNG Gate v0p12
+name: Build Pokebot3DS-CFW mGBA Starter RNG Gate v0p13 Distance Guard
 
 on:
   workflow_dispatch:
@@ -71,13 +71,13 @@ jobs:
           THREE="$(find upstream -type f -name '*.3dsx' | head -n 1)"
           test -n "$CIA"
           test -n "$THREE"
-          cp "$CIA" "dist/Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p12.cia"
-          cp "$THREE" "dist/Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p12.3dsx"
+          cp "$CIA" "dist/Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p13.cia"
+          cp "$THREE" "dist/Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p13.3dsx"
           sha256sum dist/* > dist/SHA256SUMS.txt
 
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p12
+          name: Pokebot3DS-CFW-mGBA-StarterRNGGate-v0p13
           path: dist/*
           if-no-files-found: error
