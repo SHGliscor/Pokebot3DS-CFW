@@ -1,0 +1,58 @@
+name: Build Pokebot3DS-CFW mGBA Probe 1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - mgba-probe1
+    paths:
+      - "tools/mgba_probe1_patch.py"
+      - ".github/workflows/mgba_probe1.yml"
+
+jobs:
+  build-3ds:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout probe branch
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned upstream mGBA
+        run: |
+          git clone https://github.com/mgba-emu/mgba.git upstream
+          cd upstream
+          git checkout a1020b0e72e90d56d4779efcdf776aa9c1450fe1
+
+      - name: Apply Probe 1 patch
+        run: |
+          python3 tools/mgba_probe1_patch.py upstream/src/platform/3ds/main.c
+
+      - name: Build with official mGBA 3DS Docker image
+        run: |
+          docker pull mgba/3ds
+          docker run --rm \
+            -e MAKEFLAGS=-j2 \
+            -v "$PWD/upstream:/home/mgba/src" \
+            mgba/3ds
+
+      - name: Collect CIA and 3DSX
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p dist
+          CIA="$(find upstream -type f -name '*.cia' | head -n 1)"
+          THREE="$(find upstream -type f -name '*.3dsx' | head -n 1)"
+          test -n "$CIA"
+          test -n "$THREE"
+          cp "$CIA" "dist/Pokebot3DS-CFW-mGBA-Probe1.cia"
+          cp "$THREE" "dist/Pokebot3DS-CFW-mGBA-Probe1.3dsx"
+          sha256sum dist/* > dist/SHA256SUMS.txt
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokebot3DS-CFW-mGBA-Probe1
+          path: dist/*
+          if-no-files-found: error
