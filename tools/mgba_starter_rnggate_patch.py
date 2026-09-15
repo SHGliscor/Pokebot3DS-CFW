@@ -3,10 +3,12 @@ from pathlib import Path
 import sys
 
 GATE_CODE = r"""
-/* ===== Pokebot3DS-CFW mGBA Ruby/Sapphire starter generation-aware RNG gate ===== */
+/* ===== Pokebot3DS-CFW mGBA Ruby/Sapphire v1.0-v1.1 starter generation-aware RNG gate ===== */
 #define PB3_RS_RNG_ADDR 0x03004818u
 #define PB3_RS_GMAIN_CB2_ADDR 0x03001774u
-#define PB3_RS_STARTER_CB2 0x08109EA0u
+#define PB3_RS_ROM_REVISION_ADDR 0x080000BCu
+#define PB3_RS_STARTER_CB2_REV0 0x08109E80u
+#define PB3_RS_STARTER_CB2_REV1 0x08109EA0u
 
 /* Enough for ~49 hours at 670 starters/hour. */
 #define PB3_STARTER_HISTORY_CAPACITY 32768u
@@ -55,6 +57,20 @@ static bool _pb3StarterGameSupported(struct mGUIRunner* runner) {
 	memset(&info, 0, sizeof(info));
 	runner->core->getGameInfo(runner->core, &info);
 	return !strcmp(info.code, "AXVE") || !strcmp(info.code, "AXPE");
+}
+
+static unsigned _pb3StarterRevision(struct mGUIRunner* runner) {
+	return runner->core->busRead8(runner->core, PB3_RS_ROM_REVISION_ADDR) & 0xFFu;
+}
+
+static uint32_t _pb3StarterCb2ForRevision(unsigned revision) {
+	if (revision == 0u) return PB3_RS_STARTER_CB2_REV0;
+	if (revision == 1u) return PB3_RS_STARTER_CB2_REV1;
+	return 0u;
+}
+
+static bool _pb3StarterRevisionSupported(unsigned revision) {
+	return revision == 0u || revision == 1u;
 }
 
 static uint32_t _pb3Read32(struct mGUIRunner* runner, uint32_t address) {
@@ -268,13 +284,28 @@ COMMAND_CODE = r"""
 			return;
 		}
 
+		unsigned revision = _pb3StarterRevision(runner);
+		uint32_t starterCb2 = _pb3StarterCb2ForRevision(revision);
+		if (!_pb3StarterRevisionSupported(revision) || !starterCb2) {
+			_pb3Send(&peer, peerLen, "PB3 ERR STARTER_UNSUPPORTED_REVISION");
+			return;
+		}
+
 		uint32_t cb2 = _pb3Read32(runner, PB3_RS_GMAIN_CB2_ADDR) & ~1u;
-		char out[96];
-		if (cb2 == PB3_RS_STARTER_CB2) {
-			snprintf(out, sizeof(out), "PB3 STARTER_OPEN SCREEN CB=%08lX", (unsigned long) cb2);
+		char out[128];
+		if (cb2 == starterCb2) {
+			snprintf(
+				out, sizeof(out),
+				"PB3 STARTER_OPEN SCREEN REV=%02X CB=%08lX",
+				revision, (unsigned long) cb2
+			);
 		} else {
 			pb3StarterOneShotKeys |= (1u << GBA_KEY_A);
-			snprintf(out, sizeof(out), "PB3 STARTER_OPEN PRESSED CB=%08lX", (unsigned long) cb2);
+			snprintf(
+				out, sizeof(out),
+				"PB3 STARTER_OPEN PRESSED REV=%02X CB=%08lX",
+				revision, (unsigned long) cb2
+			);
 		}
 		_pb3Send(&peer, peerLen, out);
 #else
@@ -287,6 +318,12 @@ COMMAND_CODE = r"""
 #ifdef M_CORE_GBA
 		if (!_pb3StarterGameSupported(runner)) {
 			_pb3Send(&peer, peerLen, "PB3 ERR STARTER_UNSUPPORTED_GAME");
+			return;
+		}
+
+		unsigned revision = _pb3StarterRevision(runner);
+		if (!_pb3StarterRevisionSupported(revision)) {
+			_pb3Send(&peer, peerLen, "PB3 ERR STARTER_UNSUPPORTED_REVISION");
 			return;
 		}
 
@@ -330,7 +367,8 @@ COMMAND_CODE = r"""
 		char out[256];
 		snprintf(
 			out, sizeof(out),
-			"PB3 OK STARTER_ARM SEED=%04X DELAY=%u SESSION_USED=%u GEN_USED=%u SEED_ARMS=%u SEED_CHANGES=%u WIN_MIN=%u WIN_MAX=%u",
+			"PB3 OK STARTER_ARM REV=%02X SEED=%04X DELAY=%u SESSION_USED=%u GEN_USED=%u SEED_ARMS=%u SEED_CHANGES=%u WIN_MIN=%u WIN_MAX=%u",
+			revision,
 			pb3StarterSeed,
 			pb3StarterDelayFrames,
 			pb3StarterHistoryCount,
@@ -494,7 +532,7 @@ def main():
     text = path.read_text(encoding="utf-8")
 
     if "Pokebot3DS-CFW mGBA Ruby starter generation-aware RNG gate" in text:
-        print("Starter generation-aware RNG gate patch already applied")
+        print("Ruby/Sapphire v1.0-v1.1 starter generation-aware RNG gate patch already applied")
         return
 
     poll_marker = "static void _pb3BridgePoll(struct mGUIRunner* runner) {"
@@ -528,7 +566,7 @@ def main():
     )
 
     path.write_text(text, encoding="utf-8")
-    print(f"Applied Pokebot3DS-CFW Ruby/Sapphire generation-aware RNG gate patch to {path}")
+    print(f"Applied Pokebot3DS-CFW Ruby/Sapphire v1.0-v1.1 generation-aware RNG gate patch to {path}")
 
 if __name__ == "__main__":
     main()
