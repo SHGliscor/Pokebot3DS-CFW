@@ -1,0 +1,60 @@
+name: Package Gen3 Route 101 Sprites
+
+on:
+  push:
+    branches:
+      - mgba-probe1
+    paths:
+      - ".github/workflows/gen3_route101_sprites.yml"
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PokéBot Gen3 sprite source
+        run: |
+          git clone https://github.com/40Cakes/pokebot-gen3.git source
+          cd source
+          git checkout 5dd898f830775d448b06db6f5cd65b930540f146
+
+      - name: Collect Route 101 normal and shiny sprites
+        run: |
+          mkdir -p dist/assets/pokemon/normal
+          mkdir -p dist/assets/pokemon/shiny
+          mkdir -p dist/assets/pokemon/anti-shiny
+          for MON in Poochyena Zigzagoon Wurmple; do
+            cp "source/modules/web/static/sprites/pokemon/normal/$MON.png" "dist/assets/pokemon/normal/$MON.png"
+            cp "source/modules/web/static/sprites/pokemon/shiny/$MON.png" "dist/assets/pokemon/shiny/$MON.png"
+          done
+
+      - name: Create anti-shiny variants
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageOps
+          for src in Path("dist/assets/pokemon/shiny").glob("*.png"):
+              im = Image.open(src).convert("RGBA")
+              rgb = Image.merge("RGB", im.split()[:3])
+              inv = ImageOps.invert(rgb)
+              out = Image.merge("RGBA", (*inv.split(), im.getchannel("A")))
+              out.save(Path("dist/assets/pokemon/anti-shiny") / src.name)
+          PY
+
+      - name: Add attribution
+        run: |
+          cat > dist/SPRITE_SOURCE.txt <<'EOF'
+          Route 101 normal/shiny sprites copied from 40Cakes/pokebot-gen3
+          pinned commit: 5dd898f830775d448b06db6f5cd65b930540f146
+          source paths: modules/web/static/sprites/pokemon/{normal,shiny}/
+          upstream license: GPL-3.0
+          anti-shiny variants are RGB inversions of the shiny sprites, preserving alpha.
+          EOF
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokebot3DS-CFW-Gen3-Route101-Sprites
+          path: dist/**
+          if-no-files-found: error
