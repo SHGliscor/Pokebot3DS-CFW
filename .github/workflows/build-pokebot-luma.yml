@@ -29,8 +29,8 @@ jobs:
           install -m755 /tmp/makerom/makerom /usr/local/bin/makerom
           command -v firmtool
           command -v makerom
-          command -v arm-none-eabi-as
-          command -v arm-none-eabi-objcopy
+          test -x "$DEVKITARM/bin/arm-none-eabi-as"
+          test -x "$DEVKITARM/bin/arm-none-eabi-objcopy"
 
       - name: Fetch pinned Luma3DS source
         run: |
@@ -56,8 +56,8 @@ jobs:
       - name: Build direct TwlBg ARM11 payload
         run: |
           set -eux
-          arm-none-eabi-as -mcpu=mpcore -mthumb luma_pokebot_bridge/twl_direct_poc/pokebot_twl_hook.s -o /tmp/pokebot_twl_hook.o
-          arm-none-eabi-objcopy -O binary /tmp/pokebot_twl_hook.o /tmp/pokebot_twl_hook.bin
+          "$DEVKITARM/bin/arm-none-eabi-as" -mcpu=mpcore -mthumb luma_pokebot_bridge/twl_direct_poc/pokebot_twl_hook.s -o /tmp/pokebot_twl_hook.o
+          "$DEVKITARM/bin/arm-none-eabi-objcopy" -O binary /tmp/pokebot_twl_hook.o /tmp/pokebot_twl_hook.bin
           test -s /tmp/pokebot_twl_hook.bin
           wc -c /tmp/pokebot_twl_hook.bin
           sha256sum /tmp/pokebot_twl_hook.bin
