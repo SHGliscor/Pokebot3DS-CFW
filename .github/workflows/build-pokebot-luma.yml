@@ -2,6 +2,9 @@ name: Build Pokebot TWL Direct PoC
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - pokebot-twl-direct-poc-v0p1
   pull_request:
     branches:
       - main
@@ -48,7 +51,6 @@ jobs:
           python3 luma_pokebot_bridge/tools/apply_pokebot_menu.py
           python3 luma_pokebot_bridge/tools/apply_additive_input_redirection.py
           python3 luma_pokebot_bridge/tools/apply_ack_controller_v0p5.py
-
           grep -q 'Pokebot-Luma v0p5' Luma3DS/sysmodules/rosalina/source/menus.c
           grep -q 'POKEBOT_RAM_PORT       4952' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_CMD_INPUT_PULSE  6' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
@@ -57,7 +59,7 @@ jobs:
       - name: Build direct TwlBg ARM11 hook
         run: |
           set -eux
-          arm-none-eabi-as -mcpu=mpcore -mthumb             luma_pokebot_bridge/twl_direct_poc/pokebot_twl_hook.s             -o /tmp/pokebot_twl_hook.o
+          arm-none-eabi-as -mcpu=mpcore -mthumb luma_pokebot_bridge/twl_direct_poc/pokebot_twl_hook.s -o /tmp/pokebot_twl_hook.o
           arm-none-eabi-objcopy -O binary /tmp/pokebot_twl_hook.o /tmp/pokebot_twl_hook.bin
           test -s /tmp/pokebot_twl_hook.bin
           wc -c /tmp/pokebot_twl_hook.bin
@@ -66,8 +68,7 @@ jobs:
       - name: Patch stock TwlBg at TWL_FIRM launch
         run: |
           set -eux
-          python3 luma_pokebot_bridge/tools/apply_twl_direct_poc.py             --hook-bin /tmp/pokebot_twl_hook.bin
-
+          python3 luma_pokebot_bridge/tools/apply_twl_direct_poc.py --hook-bin /tmp/pokebot_twl_hook.bin
           grep -q 'findPokebotTwlCodeCave' Luma3DS/arm9/source/patches.c
           grep -q 'hidUpdatePattern' Luma3DS/arm9/source/patches.c
           grep -q 'pokebot_twl_hook_bin' Luma3DS/arm9/source/patches.c
@@ -90,23 +91,19 @@ jobs:
           cp luma_pokebot_bridge/tools/apply_twl_direct_poc.py artifact/SOURCE_PATCHES/
           cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
           cp /tmp/pokebot_twl_hook.bin artifact/SOURCE_PATCHES/pokebot_twl_hook.bin
-
           cat > artifact/FIRST_TEST.txt <<'EOF'
           Pokebot TWL Direct PoC v0p1
 
           PURPOSE
-          -------
           Prove direct ARM11 TwlBg -> DS input injection on real hardware.
-          This test does NOT use RTCom, an ARM7 patch, a patched DS ROM, or the
+          This does not use RTCom, an ARM7 patch, a patched DS ROM, or the
           nds-bootstrap Pokebot mailbox.
 
           TEST MAPPING
-          ------------
-          Physical New 3DS Y button -> DS A
+          Physical New 3DS Y button -> DS A.
           Physical Y is suppressed while the override is active.
 
           INSTALL
-          -------
           1. Back up the boot.firm that currently works on this console.
           2. Replace only SD:/boot.firm with SD_ROOT/boot.firm from this package.
           3. Do not install a TwlBg.cxi.
@@ -114,35 +111,28 @@ jobs:
           5. Launch HeartGold through the same normal method already used.
 
           HARDWARE TEST
-          -------------
           1. Confirm HeartGold reaches the overworld.
           2. Confirm normal physical A still works.
-          3. Face an NPC, sign, PC, or other object where pressing A has an
-             obvious harmless effect.
+          3. Face an NPC, sign, PC, or harmless object where A has an obvious effect.
           4. Press physical Y once.
 
           PASS
-          ----
           Y performs the same DS action as one A press.
 
-          FAIL INFORMATION
-          ----------------
-          - If TWL_FIRM/HeartGold does not boot, restore the backed-up boot.firm.
-          - If HeartGold boots but Y remains normal Y / does nothing, report that.
-          - Avoid opening HOME while running this finite PoC because the proof
-            temporarily shares LGY HID-emulation registers with TwlBg.
+          FAILURE
+          If TWL_FIRM/HeartGold does not boot, restore the backed-up boot.firm.
+          If HeartGold boots but Y remains normal Y or does nothing, report that.
+          Avoid HOME during this finite PoC because this proof shares the LGY
+          HID-emulation registers used by TwlBg.
 
           SAFETY
-          ------
-          - no Pokémon/game RAM writes
+          - no Pokemon/game RAM writes
           - no DS ROM modification
           - normal Pokebot-Luma RAM bridge remains read-only
           - dedicated experimental branch/build only
           EOF
-
-          printf '%s
-'             'Upstream Luma3DS: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a'             'PoC branch: pokebot-twl-direct-poc-v0p1'             > artifact/SOURCE_PATCHES/BUILD_INFO.txt
-
+          echo 'Upstream Luma3DS: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a' > artifact/SOURCE_PATCHES/BUILD_INFO.txt
+          echo 'PoC branch: pokebot-twl-direct-poc-v0p1' >> artifact/SOURCE_PATCHES/BUILD_INFO.txt
           sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
           sha256sum artifact/SOURCE_PATCHES/pokebot_twl_hook.bin > artifact/TWL_HOOK_SHA256.txt
 
