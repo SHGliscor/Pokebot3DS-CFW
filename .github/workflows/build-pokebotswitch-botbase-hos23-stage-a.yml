@@ -1,0 +1,54 @@
+name: Build PokebotSwitch Botbase HOS23 Stage A
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build/usb-botbase-hos23
+    paths:
+      - 'switch/pokebotswitch-botbase/**'
+      - '.github/workflows/build-pokebotswitch-botbase-hos23-stage-a.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Stage A
+        working-directory: switch/pokebotswitch-botbase
+        run: make -j2
+
+      - name: Verify output
+        run: test -s switch/pokebotswitch-botbase/pokebotswitch-botbase.nsp
+
+      - name: Package SD overlay
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ROOT="PokebotSwitch-Botbase-HOS23-StageA"
+          TID="43000000000000B0"
+          mkdir -p "$ROOT/atmosphere/contents/$TID/flags"
+          cp switch/pokebotswitch-botbase/pokebotswitch-botbase.nsp "$ROOT/atmosphere/contents/$TID/exefs.nsp"
+          : > "$ROOT/atmosphere/contents/$TID/flags/boot2.flag"
+          cat > "$ROOT/BUILD_INFO.txt" <<EOF
+          PokebotSwitch Botbase HOS23 Stage A
+          Program ID: $TID
+          Purpose: boot-only compatibility probe
+          Runtime: idle/sleep only
+          USB: disabled
+          HID: disabled
+          RAM/process debug: disabled
+          Filesystem/network/capture/VI: disabled
+          Hardware acceptance: Switch must reach HOME normally.
+          Commit: $GITHUB_SHA
+          EOF
+
+      - name: Upload Stage A
+        uses: actions/upload-artifact@v4
+        with:
+          name: PokebotSwitch-Botbase-HOS23-StageA
+          path: PokebotSwitch-Botbase-HOS23-StageA
+          if-no-files-found: error
