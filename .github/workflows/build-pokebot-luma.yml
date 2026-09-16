@@ -1,4 +1,4 @@
-name: Build Pokebot-Luma
+name: Build Pokebot TWL Direct PoC
 
 on:
   workflow_dispatch:
@@ -29,6 +29,8 @@ jobs:
           install -m755 /tmp/makerom/makerom /usr/local/bin/makerom
           command -v firmtool
           command -v makerom
+          command -v arm-none-eabi-as
+          command -v arm-none-eabi-objcopy
 
       - name: Fetch pinned Luma3DS source
         run: |
@@ -38,7 +40,7 @@ jobs:
           git checkout d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a
           test "$(git rev-parse HEAD)" = "d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a"
 
-      - name: Apply Pokebot RAM, Rosalina and additive HID patches
+      - name: Apply current Pokebot-Luma patches
         run: |
           set -eux
           python3 luma_pokebot_bridge/tools/apply_ram_bridge.py
@@ -46,15 +48,29 @@ jobs:
           python3 luma_pokebot_bridge/tools/apply_pokebot_menu.py
           python3 luma_pokebot_bridge/tools/apply_additive_input_redirection.py
           grep -q 'Pokebot-Luma v0p4' Luma3DS/sysmodules/rosalina/source/menus.c
-          grep -q 'PokebotRamBridge_Start' Luma3DS/sysmodules/rosalina/source/menus.c
           grep -q 'POKEBOT_RAM_PORT       4952' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q '#include "sock_util.h"' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q 'POKEBOT_CMD_READ      = 4' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          ! grep -q 'WriteTarget' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'Pokebot additive HID' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
-          grep -q 'and r1, r1, r2      @ Active-low union' Luma3DS/sysmodules/rosalina/source/input_redirection_hooks.s
+
+      - name: Build direct TwlBg ARM11 payload
+        run: |
+          set -eux
+          arm-none-eabi-as -mcpu=mpcore -mthumb luma_pokebot_bridge/twl_direct_poc/pokebot_twl_hook.s -o /tmp/pokebot_twl_hook.o
+          arm-none-eabi-objcopy -O binary /tmp/pokebot_twl_hook.o /tmp/pokebot_twl_hook.bin
+          test -s /tmp/pokebot_twl_hook.bin
+          wc -c /tmp/pokebot_twl_hook.bin
+          sha256sum /tmp/pokebot_twl_hook.bin
+
+      - name: Add direct TwlBg patch to boot.firm source
+        run: |
+          set -eux
+          python3 luma_pokebot_bridge/tools/apply_twl_direct_poc.py --hook-bin /tmp/pokebot_twl_hook.bin
+          grep -q 'findPokebotTwlCodeCave' Luma3DS/arm9/source/patches.c
+          grep -q 'hidUpdatePattern' Luma3DS/arm9/source/patches.c
+          grep -q 'pokebot_twl_hook_bin' Luma3DS/arm9/source/patches.c
+          grep -q 'patchTwlBg(copyRes.codeDstAddr, copyRes.codeSize, copyRes.textSize)' Luma3DS/arm9/source/firm.c
+          grep -q 'u32 textSize;' Luma3DS/arm9/source/firm.c
 
       - name: Build boot.firm
         run: |
@@ -67,77 +83,60 @@ jobs:
       - name: Stage hardware-test package
         run: |
           set -eux
-          mkdir -p artifact/SD_ROOT artifact/SOURCE_PATCHES artifact/DEBUG_SYMBOLS artifact/PC_TEST
+          mkdir -p artifact/SD_ROOT artifact/SOURCE_PATCHES artifact/DEBUG_SYMBOLS
           cp Luma3DS/boot.firm artifact/SD_ROOT/boot.firm
-          cp luma_pokebot_bridge/tools/apply_pokebot_menu.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/apply_additive_input_redirection.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/apply_ram_bridge.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/apply_ram_bridge_compile_fix.py artifact/SOURCE_PATCHES/
-          cp luma_pokebot_bridge/tools/test_pokebot_luma_input.py artifact/PC_TEST/
-          cp luma_pokebot_bridge/tools/test_pokebot_luma_ram.py artifact/PC_TEST/
-          cp luma_pokebot_bridge/README.md artifact/
+          cp luma_pokebot_bridge/twl_direct_poc/pokebot_twl_hook.s artifact/SOURCE_PATCHES/
+          cp luma_pokebot_bridge/tools/apply_twl_direct_poc.py artifact/SOURCE_PATCHES/
+          cp /tmp/pokebot_twl_hook.bin artifact/SOURCE_PATCHES/pokebot_twl_hook.bin
           cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
           cp Luma3DS/sysmodules/rosalina/rosalina.elf artifact/DEBUG_SYMBOLS/
           cp Luma3DS/sysmodules/rosalina/build/rosalina.map artifact/DEBUG_SYMBOLS/ || true
-          cp Luma3DS/sysmodules/rosalina/build/rosalina.lst artifact/DEBUG_SYMBOLS/ || true
+
           cat > artifact/FIRST_TEST.txt <<'EOF'
-          Pokebot-Luma v0p4 read-only RAM bridge hardware test
+          Pokebot TWL Direct PoC v0p1
 
-          HARDWARE-PROVEN BEFORE THIS BUILD:
-          - v0p2 menu/reboot foundation
-          - v0p3 synthetic A and START
-          - physical controls and touch remain usable
-          - physical input works during a synthetic hold
+          PURPOSE
+          Prove direct ARM11 TwlBg -> DS input injection on real hardware.
+          This test does not use RTCom, an ARM7 patch, a patched DS ROM, or
+          the nds-bootstrap Pokebot mailbox.
 
-          v0p4 preserves that controller path and activates RAM UDP 4952.
+          TEST MAPPING
+          Physical New 3DS Y -> DS A.
+          Physical Y is suppressed while held.
 
-          IMPORTANT:
-          1. Keep a copy of the known-good v0p3 boot.firm.
-          2. Replace SD root boot.firm with SD_ROOT/boot.firm.
-          3. Boot normally and launch ORAS.
-          4. Open Rosalina -> Pokebot3DS Bridge...
-          5. Select Enable Both.
-          6. Status should show:
-               Pokebot-Luma v0p4
-               RAM Bridge:       ON
-               RAM result:       0x00000000
-               RAM UDP:          4952
-               Input Controller: ON
-               Input result:     0x00000000
-               Input UDP:        4950
-          7. Return to ORAS. Confirm real buttons and touchscreen still work.
-          8. From INSIDE the extracted PC_TEST folder run:
-               python test_pokebot_luma_ram.py <3DS-IP>
-             Example:
-               python test_pokebot_luma_ram.py 192.168.0.28
-          9. Expected:
-               PING: PASS Pokebot3DS-Luma-v0p4
-               GAME_INFO: PASS
-               QUERY: PASS
-               READ: PASS 32 bytes
-             The default read is 0x20 bytes from game code address 0x00100000.
-          10. Re-open Status. Packets should have increased and Reads >= 1.
-          11. Re-test the already-proven input path if desired:
-               python test_pokebot_luma_input.py <3DS-IP> A
-               python test_pokebot_luma_input.py <3DS-IP> START
-          12. Confirm physical controls/touch still work afterward.
+          INSTALL
+          1. Back up the boot.firm that currently works on the console.
+          2. Replace only SD:/boot.firm with SD_ROOT/boot.firm from this package.
+          3. Do NOT install a TwlBg.cxi.
+          4. Boot normally.
+          5. Launch HeartGold the same way as before.
 
-          RAM SAFETY:
-          - QUERY and READ only
-          - maximum READ = 0x200 bytes
-          - no game-memory write command
-          - each read validates the region, maps only required pages, copies,
-            then immediately unmaps
+          TEST
+          1. Confirm HeartGold reaches the overworld.
+          2. Confirm physical A still works.
+          3. Face an NPC/sign/PC/object where A has a harmless visible effect.
+          4. Press physical Y once.
 
-          Do not start normal hunt/endurance testing until this generic RAM
-          smoke test passes on hardware.
+          PASS
+          Y performs the same DS action as A.
+
+          SAFETY / RECOVERY
+          - This is an isolated hardware-test build.
+          - No Pokemon/game RAM write command is added.
+          - The DS ROM is untouched.
+          - Avoid HOME during this finite PoC because the test shares TwlBg's
+            LGY HID-emulation registers.
+          - If TWL_FIRM/HeartGold fails to boot, restore the backed-up boot.firm.
           EOF
-          printf '%s\n' 'Upstream Luma3DS commit: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a' > artifact/SOURCE_PATCHES/UPSTREAM.txt
+
+          echo 'Upstream Luma3DS: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a' > artifact/SOURCE_PATCHES/BUILD_INFO.txt
+          echo 'Branch: pokebot-twl-direct-poc-v0p1-main' >> artifact/SOURCE_PATCHES/BUILD_INFO.txt
           sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
+          sha256sum artifact/SOURCE_PATCHES/pokebot_twl_hook.bin > artifact/TWL_HOOK_SHA256.txt
 
       - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
-          name: Pokebot-Luma-v0p4-ReadOnlyRamBridge
+          name: Pokebot-TWL-Direct-v0p1
           path: artifact/
           if-no-files-found: error
