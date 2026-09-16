@@ -1,6 +1,8 @@
 name: Build usb-botbase HOS23 Test
 
 on:
+  push:
+    branches: ["build/usb-botbase-hos23"]
   workflow_dispatch:
 
 jobs:
