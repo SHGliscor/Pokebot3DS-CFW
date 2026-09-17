@@ -85,7 +85,7 @@ jobs:
           cp mgba-src/build/3ds/mgba.elf out/mgba-n3ds-bot-turbo-v0p1.elf
           cp mgba-n3ds-turbo/README.md out/TEST_INSTRUCTIONS.md
           printf '%s\n' '25ca25612eb806ad3a70f3209ccd93890ea0c2c6' > out/UPSTREAM_MGBA_COMMIT.txt
-          sha256sum out/* > out/SHA256SUMS.txt
+          (cd out && sha256sum mgba-n3ds-bot-turbo-v0p1.3dsx mgba-n3ds-bot-turbo-v0p1.elf TEST_INSTRUCTIONS.md UPSTREAM_MGBA_COMMIT.txt > SHA256SUMS.txt)
 
       - name: Upload mGBA N3DS Bot Turbo
         uses: actions/upload-artifact@v4
