@@ -27,7 +27,7 @@ jobs:
         run: |
           set -euxo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends ninja-build
+          apt-get install -y --no-install-recommends make
 
       - name: Fetch pinned mGBA
         shell: bash
@@ -51,7 +51,7 @@ jobs:
         run: |
           set -euxo pipefail
           cmake -S "$GITHUB_WORKSPACE/mgba-src" -B "$GITHUB_WORKSPACE/mgba-src/build" \
-            -G Ninja \
+            -G "Unix Makefiles" \
             -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/mgba-src/src/platform/3ds/CMakeToolchain.txt" \
             -DCMAKE_BUILD_TYPE=Release
 
