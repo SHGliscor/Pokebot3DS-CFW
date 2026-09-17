@@ -67,14 +67,15 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DBANNERTOOL=/usr/local/bin/bannertool
 
-      - name: Build N3DS turbo 3DSX
+      - name: Build N3DS turbo 3DSX and CIA
         shell: bash
         run: |
           set -euxo pipefail
-          cmake --build "$GITHUB_WORKSPACE/mgba-src/build" --target mgba.3dsx --parallel 2
+          cmake --build "$GITHUB_WORKSPACE/mgba-src/build" --target mgba.3dsx mgba.cia --parallel 2
           test -f mgba-src/build/3ds/mgba.3dsx
+          test -f mgba-src/build/3ds/mgba.cia
           test -f mgba-src/build/3ds/mgba.elf
-          ls -lh mgba-src/build/3ds/mgba.3dsx mgba-src/build/3ds/mgba.elf
+          ls -lh mgba-src/build/3ds/mgba.3dsx mgba-src/build/3ds/mgba.cia mgba-src/build/3ds/mgba.elf
 
       - name: Stage artifacts
         shell: bash
@@ -82,10 +83,11 @@ jobs:
           set -euxo pipefail
           mkdir -p out
           cp mgba-src/build/3ds/mgba.3dsx out/mgba-n3ds-bot-turbo-v0p1.3dsx
+          cp mgba-src/build/3ds/mgba.cia out/mgba-n3ds-bot-turbo-v0p1.cia
           cp mgba-src/build/3ds/mgba.elf out/mgba-n3ds-bot-turbo-v0p1.elf
           cp mgba-n3ds-turbo/README.md out/TEST_INSTRUCTIONS.md
           printf '%s\n' '25ca25612eb806ad3a70f3209ccd93890ea0c2c6' > out/UPSTREAM_MGBA_COMMIT.txt
-          (cd out && sha256sum mgba-n3ds-bot-turbo-v0p1.3dsx mgba-n3ds-bot-turbo-v0p1.elf TEST_INSTRUCTIONS.md UPSTREAM_MGBA_COMMIT.txt > SHA256SUMS.txt)
+          (cd out && sha256sum mgba-n3ds-bot-turbo-v0p1.3dsx mgba-n3ds-bot-turbo-v0p1.cia mgba-n3ds-bot-turbo-v0p1.elf TEST_INSTRUCTIONS.md UPSTREAM_MGBA_COMMIT.txt > SHA256SUMS.txt)
 
       - name: Upload mGBA N3DS Bot Turbo
         uses: actions/upload-artifact@v4
