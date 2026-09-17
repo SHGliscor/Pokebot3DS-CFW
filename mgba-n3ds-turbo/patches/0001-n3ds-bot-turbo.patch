@@ -29,7 +29,7 @@ diff --git a/src/platform/3ds/main.c b/src/platform/3ds/main.c
 index ac638465d..111111111 100644
 --- a/src/platform/3ds/main.c
 +++ b/src/platform/3ds/main.c
-@@ -96,6 +96,15 @@ static ndspWaveBuf dspBuffer[DSP_BUFFERS];
+@@ -96,6 +96,17 @@ static ndspWaveBuf dspBuffer[DSP_BUFFERS];
  static int bufferId = 0;
  static bool frameLimiter = true;
  static u32 frameCounter;
@@ -58,7 +58,7 @@ index ac638465d..111111111 100644
  	if (frameStarted) {
  		return;
  	}
-@@ -357,6 +370,37 @@ static void _setup(struct mGUIRunner* runner) {
+@@ -357,6 +370,33 @@ static void _setup(struct mGUIRunner* runner) {
  	runner->core->setAudioBufferSize(runner->core, AUDIO_SAMPLES);
  }
  
@@ -100,7 +100,7 @@ index ac638465d..111111111 100644
  	osSetSpeedupEnable(false);
  	frameLimiter = true;
  
-@@ -592,11 +637,22 @@ static void _drawTex(struct mCore* core, bool faded, bool both) {
+@@ -592,12 +637,24 @@ static void _drawTex(struct mCore* core, bool faded, bool both) {
  }
  
  static void _prepareForFrame(struct mGUIRunner* runner) {
@@ -126,7 +126,7 @@ index ac638465d..111111111 100644
  	C3D_Tex* tex = &outputTexture[activeOutputTexture];
  
  	GSPGPU_FlushDataCache(outputBuffer, 256 * GBA_VIDEO_VERTICAL_PIXELS * 2);
-@@ -656,11 +712,12 @@ static void _incrementScreenMode(struct mGUIRunner* runner) {
+@@ -656,11 +712,11 @@ static void _incrementScreenMode(struct mGUIRunner* runner) {
  }
  
  static void _setFrameLimiter(struct mGUIRunner* runner, bool limit) {
@@ -151,7 +151,7 @@ index ac638465d..111111111 100644
  	if (hasSound == DSP_SUPPORTED) {
  		int startId = bufferId;
  		while (dspBuffer[bufferId].status == NDSP_WBUF_QUEUED || dspBuffer[bufferId].status == NDSP_WBUF_PLAYING) {
-@@ -1009,7 +1071,7 @@ int main(int argc, char* argv[]) {
+@@ -1009,8 +1071,8 @@ int main(int argc, char* argv[]) {
  	runner.autosave.core = NULL;
  	MutexInit(&runner.autosave.mutex);
  	ConditionInit(&runner.autosave.cond);
