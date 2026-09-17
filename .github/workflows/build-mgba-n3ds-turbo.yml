@@ -27,20 +27,18 @@ jobs:
         run: |
           set -euxo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends make g++
+          apt-get install -y --no-install-recommends make g++ cmake git
 
       - name: Build and install bannertool
         shell: bash
         run: |
           set -euxo pipefail
           git clone --depth 1 https://github.com/carstene1ns/3ds-bannertool.git bannertool-src
-          cmake -S bannertool-src -B bannertool-src/build \
-            -G "Unix Makefiles" \
-            -DCMAKE_BUILD_TYPE=Release
+          cmake -S bannertool-src -B bannertool-src/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
           cmake --build bannertool-src/build --parallel 2
-          install -m 0755 bannertool-src/build/bannertool /usr/local/bin/bannertool
-          bannertool --help >/dev/null || true
+          find bannertool-src/build -type f -name bannertool -print -exec install -m 0755 {} /usr/local/bin/bannertool \;
           command -v bannertool
+          bannertool --help >/dev/null 2>&1 || true
 
       - name: Fetch pinned mGBA
         shell: bash
@@ -66,7 +64,8 @@ jobs:
           cmake -S "$GITHUB_WORKSPACE/mgba-src" -B "$GITHUB_WORKSPACE/mgba-src/build" \
             -G "Unix Makefiles" \
             -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/mgba-src/src/platform/3ds/CMakeToolchain.txt" \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBANNERTOOL=/usr/local/bin/bannertool
 
       - name: Build N3DS turbo 3DSX
         shell: bash
@@ -74,6 +73,7 @@ jobs:
           set -euxo pipefail
           cmake --build "$GITHUB_WORKSPACE/mgba-src/build" --target mgba.3dsx --parallel 2
           test -f mgba-src/build/3ds/mgba.3dsx
+          test -f mgba-src/build/3ds/mgba.elf
           ls -lh mgba-src/build/3ds/mgba.3dsx mgba-src/build/3ds/mgba.elf
 
       - name: Stage artifacts
