@@ -1,0 +1,165 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pokebot3DS-CFW <noreply@github.com>
+Date: Thu, 17 Sep 2026 10:30:00 +0100
+Subject: [PATCH] 3DS: add bot turbo presentation path for fast-forward
+
+The stock 3DS frontend still uploads and presents every emulated frame while
+fast-forward is active. On New 3DS this wastes a large part of the available
+CPU/GPU budget when the goal is faster game execution rather than 120 unique
+screen updates per second.
+
+When the frame limiter is disabled (the same state used by fast-forward):
+
+* use GBA frameskip=3 so only one in four frames executes the software renderer;
+* only upload/present that rendered frame, avoiding three GPU transfers and
+  Citro3D frame submissions out of four;
+* discard audio buffers before NDSP cache flush/queue work;
+* retain the current New 3DS speedup request;
+* raise the secondary-core application CPU budget from 20% to 30%.
+
+The original frameskip is restored as soon as fast-forward is disabled or the
+game is paused/unloaded. Normal-speed behaviour is otherwise unchanged.
+
+Pinned against mGBA 25ca25612eb806ad3a70f3209ccd93890ea0c2c6.
+---
+ src/platform/3ds/main.c | 73 ++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 71 insertions(+), 2 deletions(-)
+
+diff --git a/src/platform/3ds/main.c b/src/platform/3ds/main.c
+index ac638465d..111111111 100644
+--- a/src/platform/3ds/main.c
++++ b/src/platform/3ds/main.c
+@@ -96,6 +96,15 @@ static ndspWaveBuf dspBuffer[DSP_BUFFERS];
+ static int bufferId = 0;
+ static bool frameLimiter = true;
+ static u32 frameCounter;
++
++// Pokebot3DS-CFW N3DS bot turbo profile. During fast-forward, GBA execution
++// remains unthrottled while only one frame in four is software-rendered and
++// presented. This targets ~30 visible FPS when the emulation core reaches
++// ~120 FPS, spending the remaining budget on game execution instead.
++#define BOT_TURBO_GBA_FRAMESKIP 3
++#define BOT_TURBO_PRESENT_DIVISOR 4
++static bool botTurboActive = false;
++static bool botTurboPresent = true;
++static unsigned botTurboFrameCounter = 0;
++static int botTurboSavedFrameskip = 0;
+ 
+ static C3D_RenderTarget* topScreen;
+ static C3D_RenderTarget* bottomScreen;
+@@ -191,6 +200,10 @@ static void _map3DSKey(struct mInputMap* map, int ctrKey, int key) {
+ }
+ 
+ static void _drawStart(void) {
++	if (botTurboActive && !botTurboPresent) {
++		return;
++	}
++
+ 	if (frameStarted) {
+ 		return;
+ 	}
+@@ -357,6 +370,37 @@ static void _setup(struct mGUIRunner* runner) {
+ 	runner->core->setAudioBufferSize(runner->core, AUDIO_SAMPLES);
+ }
+ 
++static void _setBotTurbo(struct mGUIRunner* runner, bool enable) {
++	if (botTurboActive == enable) {
++		return;
++	}
++
++#ifdef M_CORE_GBA
++	if (runner && runner->core && runner->core->platform(runner->core) == mPLATFORM_GBA) {
++		struct GBA* gba = (struct GBA*) runner->core->board;
++		if (enable) {
++			botTurboSavedFrameskip = gba->video.frameskip;
++			gba->video.frameskip = BOT_TURBO_GBA_FRAMESKIP;
++		} else {
++			gba->video.frameskip = botTurboSavedFrameskip;
++		}
++		// Make the next presented frame immediate and keep the core/presentation
++		// cadence aligned when entering or leaving turbo.
++		gba->video.frameskipCounter = 0;
++	}
++#else
++	UNUSED(runner);
++#endif
++
++	botTurboActive = enable;
++	botTurboFrameCounter = 0;
++	botTurboPresent = true;
++}
++
+ static void _gameLoaded(struct mGUIRunner* runner) {
+ 	switch (runner->core->platform(runner->core)) {
+ #ifdef M_CORE_GBA
+@@ -384,6 +428,7 @@ static void _gameLoaded(struct mGUIRunner* runner) {
+ }
+ 
+ static void _gameUnloaded(struct mGUIRunner* runner) {
++	_setBotTurbo(runner, false);
+ 	osSetSpeedupEnable(false);
+ 	frameLimiter = true;
+ 
+@@ -592,11 +637,22 @@ static void _drawTex(struct mCore* core, bool faded, bool both) {
+ }
+ 
+ static void _prepareForFrame(struct mGUIRunner* runner) {
+ 	UNUSED(runner);
++	if (botTurboActive) {
++		botTurboPresent = (botTurboFrameCounter % BOT_TURBO_PRESENT_DIVISOR) == 0;
++		++botTurboFrameCounter;
++		if (!botTurboPresent) {
++			return;
++		}
++	} else {
++		botTurboPresent = true;
++	}
+ 	activeOutputTexture ^= 1;
+ }
+ 
+ static void _drawFrame(struct mGUIRunner* runner, bool faded) {
+-	UNUSED(runner);
++	if (botTurboActive && !botTurboPresent) {
++		return;
++	}
++
+ 	C3D_Tex* tex = &outputTexture[activeOutputTexture];
+ 
+ 	GSPGPU_FlushDataCache(outputBuffer, 256 * GBA_VIDEO_VERTICAL_PIXELS * 2);
+@@ -656,11 +712,12 @@ static void _incrementScreenMode(struct mGUIRunner* runner) {
+ }
+ 
+ static void _setFrameLimiter(struct mGUIRunner* runner, bool limit) {
+-	UNUSED(runner);
+ 	if (frameLimiter == limit) {
+ 		return;
+ 	}
+ 	frameLimiter = limit;
++	_setBotTurbo(runner, !limit);
+ }
+ 
+ static bool _running(struct mGUIRunner* runner) {
+@@ -779,6 +836,11 @@ static void _requestImage(struct mImageSource* source, const void** buffer, size
+ 
+ static void _postAudioBuffer(struct mAVStream* stream, struct mAudioBuffer* buffer) {
+ 	UNUSED(stream);
++	if (botTurboActive) {
++		mAudioBufferClear(buffer);
++		return;
++	}
++
+ 	if (hasSound == DSP_SUPPORTED) {
+ 		int startId = bufferId;
+ 		while (dspBuffer[bufferId].status == NDSP_WBUF_QUEUED || dspBuffer[bufferId].status == NDSP_WBUF_PLAYING) {
+@@ -1009,7 +1071,7 @@ int main(int argc, char* argv[]) {
+ 	runner.autosave.core = NULL;
+ 	MutexInit(&runner.autosave.mutex);
+ 	ConditionInit(&runner.autosave.cond);
+ 
+-	APT_SetAppCpuTimeLimit(20);
++	APT_SetAppCpuTimeLimit(30);
+ 	runner.autosave.thread = threadCreate(mGUIAutosaveThread, &runner.autosave, 0x2000, 0x1F, 1, false);
+ 
+ 	Thread thread2;
+-- 
+2.47.0
