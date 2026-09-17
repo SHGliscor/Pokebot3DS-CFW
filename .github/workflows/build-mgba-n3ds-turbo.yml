@@ -29,6 +29,13 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends make
 
+      - name: Install 3DS banner tool
+        shell: bash
+        run: |
+          set -euxo pipefail
+          pacman -Sy --noconfirm 3ds-bannertool
+          command -v bannertool
+
       - name: Fetch pinned mGBA
         shell: bash
         run: |
