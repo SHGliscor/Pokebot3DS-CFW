@@ -22,6 +22,13 @@ jobs:
       - name: Checkout Pokebot3DS-CFW
         uses: actions/checkout@v4
 
+      - name: Install host build tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends ninja-build
+
       - name: Fetch pinned mGBA
         shell: bash
         run: |
@@ -43,15 +50,16 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          cmake -S mgba-src -B mgba-src/build \
-            -DCMAKE_TOOLCHAIN_FILE=mgba-src/src/platform/3ds/CMakeToolchain.txt \
+          cmake -S "$GITHUB_WORKSPACE/mgba-src" -B "$GITHUB_WORKSPACE/mgba-src/build" \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/mgba-src/src/platform/3ds/CMakeToolchain.txt" \
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build 3DSX and CIA
         shell: bash
         run: |
           set -euxo pipefail
-          cmake --build mgba-src/build --parallel 2
+          cmake --build "$GITHUB_WORKSPACE/mgba-src/build" --parallel 2
           find mgba-src/build -maxdepth 3 -type f \( -name '*.3dsx' -o -name '*.cia' -o -name '*.elf' \) -print
 
       - name: Stage artifacts
