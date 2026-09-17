@@ -10,6 +10,7 @@ on:
       - "tools/mgba_fastoverride_patch.py"
       - "tools/mgba_rtcprobe_patch.py"
       - "tools/mgba_starter_rnggate_patch.py"
+      - "tools/mgba_rng_write_patch.py"
       - ".github/workflows/mgba_probe1.yml"
 
 jobs:
@@ -43,6 +44,10 @@ jobs:
       - name: Apply Ruby/Sapphire starter frame-local RNG gate
         run: |
           python3 tools/mgba_starter_rnggate_patch.py upstream/src/platform/3ds/main.c
+
+      - name: Apply guarded gRngValue write bridge
+        run: |
+          python3 tools/mgba_rng_write_patch.py upstream/src/platform/3ds/main.c
 
       - name: Verify bridge patches
         run: |
