@@ -1,0 +1,73 @@
+name: Build mGBA N3DS Bot Turbo
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - mgba-n3ds-bot-turbo-v0p1
+    paths:
+      - 'mgba-n3ds-turbo/**'
+      - '.github/workflows/build-mgba-n3ds-turbo.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitarm:latest
+
+    steps:
+      - name: Checkout Pokebot3DS-CFW
+        uses: actions/checkout@v4
+
+      - name: Fetch pinned mGBA
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone --filter=blob:none https://github.com/mgba-emu/mgba.git mgba-src
+          cd mgba-src
+          git checkout 25ca25612eb806ad3a70f3209ccd93890ea0c2c6
+
+      - name: Apply N3DS bot turbo patch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd mgba-src
+          git apply --check ../mgba-n3ds-turbo/patches/0001-n3ds-bot-turbo.patch
+          git apply ../mgba-n3ds-turbo/patches/0001-n3ds-bot-turbo.patch
+          git diff --check
+
+      - name: Configure 3DS release build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cmake -S mgba-src -B mgba-src/build \
+            -DCMAKE_TOOLCHAIN_FILE=mgba-src/src/platform/3ds/CMakeToolchain.txt \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build 3DSX and CIA
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cmake --build mgba-src/build --parallel 2
+          find mgba-src/build -maxdepth 3 -type f \( -name '*.3dsx' -o -name '*.cia' -o -name '*.elf' \) -print
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p out
+          find mgba-src/build -type f \( -name '*.3dsx' -o -name '*.cia' -o -name '*.elf' \) -exec cp -v '{}' out/ \;
+          cp mgba-n3ds-turbo/README.md out/TEST_INSTRUCTIONS.md
+          printf '%s\n' '25ca25612eb806ad3a70f3209ccd93890ea0c2c6' > out/UPSTREAM_MGBA_COMMIT.txt
+          sha256sum out/* > out/SHA256SUMS.txt
+
+      - name: Upload mGBA N3DS Bot Turbo
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokebot3DS-CFW-mGBA-N3DS-BotTurbo-v0p1
+          path: out/
+          if-no-files-found: error
+          compression-level: 9
