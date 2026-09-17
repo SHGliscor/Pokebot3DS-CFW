@@ -48,7 +48,7 @@ jobs:
           unzip -o /tmp/makerom.zip -d /tmp/makerom
           install -m 0755 /tmp/makerom/makerom /usr/local/bin/makerom
           command -v makerom
-          makerom --help >/dev/null
+          makerom -help >/dev/null
 
       - name: Fetch pinned mGBA
         shell: bash
