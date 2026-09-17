@@ -27,13 +27,19 @@ jobs:
         run: |
           set -euxo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends make
+          apt-get install -y --no-install-recommends make g++
 
-      - name: Install 3DS banner tool
+      - name: Build and install bannertool
         shell: bash
         run: |
           set -euxo pipefail
-          pacman -Sy --noconfirm 3ds-bannertool
+          git clone --depth 1 https://github.com/carstene1ns/3ds-bannertool.git bannertool-src
+          cmake -S bannertool-src -B bannertool-src/build \
+            -G "Unix Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build bannertool-src/build --parallel 2
+          install -m 0755 bannertool-src/build/bannertool /usr/local/bin/bannertool
+          bannertool --help >/dev/null || true
           command -v bannertool
 
       - name: Fetch pinned mGBA
@@ -62,19 +68,21 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/mgba-src/src/platform/3ds/CMakeToolchain.txt" \
             -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build 3DSX and CIA
+      - name: Build N3DS turbo 3DSX
         shell: bash
         run: |
           set -euxo pipefail
-          cmake --build "$GITHUB_WORKSPACE/mgba-src/build" --parallel 2
-          find mgba-src/build -maxdepth 3 -type f \( -name '*.3dsx' -o -name '*.cia' -o -name '*.elf' \) -print
+          cmake --build "$GITHUB_WORKSPACE/mgba-src/build" --target mgba.3dsx --parallel 2
+          test -f mgba-src/build/3ds/mgba.3dsx
+          ls -lh mgba-src/build/3ds/mgba.3dsx mgba-src/build/3ds/mgba.elf
 
       - name: Stage artifacts
         shell: bash
         run: |
           set -euxo pipefail
           mkdir -p out
-          find mgba-src/build -type f \( -name '*.3dsx' -o -name '*.cia' -o -name '*.elf' \) -exec cp -v '{}' out/ \;
+          cp mgba-src/build/3ds/mgba.3dsx out/mgba-n3ds-bot-turbo-v0p1.3dsx
+          cp mgba-src/build/3ds/mgba.elf out/mgba-n3ds-bot-turbo-v0p1.elf
           cp mgba-n3ds-turbo/README.md out/TEST_INSTRUCTIONS.md
           printf '%s\n' '25ca25612eb806ad3a70f3209ccd93890ea0c2c6' > out/UPSTREAM_MGBA_COMMIT.txt
           sha256sum out/* > out/SHA256SUMS.txt
