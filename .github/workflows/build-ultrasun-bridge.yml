@@ -1,0 +1,86 @@
+name: Build Ultra Sun Pokebot Bridge
+
+on:
+  push:
+    branches: [build/ultrasun-bridge-20261004]
+    paths: ['ultrasun_firmware/**', '.github/workflows/build-ultrasun-bridge.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ultrasun-firmware-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install host tools
+        run: |
+          set -eu
+          apt-get update
+          apt-get install -y --no-install-recommends git python3 python3-pip ca-certificates wget unzip make gcc
+          python3 -m pip install --break-system-packages git+https://github.com/TuxSH/firmtool.git@fdc7085c2394d87ce5dbdfecdf51423e1e7b00a1
+          wget -q https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.18.4/makerom-v0.18.4-ubuntu_x86_64.zip -O /tmp/makerom.zip
+          unzip -q /tmp/makerom.zip -d /tmp/makerom
+          install -m755 /tmp/makerom/makerom /usr/local/bin/makerom
+      - name: Fetch pinned Luma and apply existing package patches
+        run: |
+          set -eu
+          git clone https://github.com/LumaTeam/Luma3DS.git Luma3DS
+          git -C Luma3DS checkout d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a
+          test "$(git -C Luma3DS rev-parse HEAD)" = d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a
+          for script in apply_ram_bridge.py apply_ram_bridge_compile_fix.py apply_additive_input_redirection.py apply_pokebot_menu.py apply_ack_controller_v0p5.py apply_framebuffer_bridge.py apply_n3ds_latency_fix_fb.py; do
+            python3 "ultrasun_firmware/tools/$script"
+          done
+      - name: Confirm original gate rejects Ultra Sun and build baseline
+        run: |
+          set -eu
+          if python3 ultrasun_firmware/test_title_gate.py Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c; then
+            echo 'Unexpected baseline: Ultra Sun should be absent'
+            exit 1
+          fi
+          mkdir -p artifact
+          cp Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c /tmp/bridge-baseline.c
+          cp Luma3DS/sysmodules/rosalina/source/menus.c /tmp/menus-baseline.c
+          make -C Luma3DS -j2
+          test -s Luma3DS/boot.firm
+          sha256sum Luma3DS/boot.firm > artifact/RECONSTRUCTED_BASELINE_SHA256.txt
+          make -C Luma3DS clean
+      - name: Add Ultra Sun and run title regression
+        run: |
+          set -eu
+          python3 ultrasun_firmware/tools/apply_ultrasun_support.py --root Luma3DS
+          python3 ultrasun_firmware/test_title_gate.py Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          python3 -m compileall -q ultrasun_firmware
+          diff -u /tmp/bridge-baseline.c Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c > artifact/ULTRASUN_BRIDGE_DIFF.patch || test "$?" = 1
+          diff -u /tmp/menus-baseline.c Luma3DS/sysmodules/rosalina/source/menus.c > artifact/ULTRASUN_MENU_DIFF.patch || test "$?" = 1
+          grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_RAM_PORT       4952' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_INPUT_CAPS     0x000001CFUL' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          grep -q '0x20, CORE_SYSTEM' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'socPoll(&pfd, 1, 0)' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'svcSleepThread(2 \* 1000 \* 1000LL)' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+      - name: Build Ultra Sun test boot.firm
+        run: |
+          set -eu
+          make -C Luma3DS -j2
+          test -s Luma3DS/boot.firm
+          cp Luma3DS/boot.firm artifact/boot.firm
+          cp Luma3DS/LICENSE artifact/LUMA3DS_LICENSE.txt
+          cp ultrasun_firmware/README.md artifact/SOURCE_README.md
+          sha256sum artifact/boot.firm > artifact/BOOT_FIRM_SHA256.txt
+          git -C Luma3DS diff --stat > artifact/GENERATED_SOURCE_DIFF_STAT.txt
+          printf 'Repository commit: %s\nWorkflow run: %s\nLuma source: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > artifact/BUILD_PROVENANCE.txt
+          arm-none-eabi-gcc --version >> artifact/BUILD_PROVENANCE.txt
+          python3 ultrasun_firmware/test_title_gate.py Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c > artifact/TITLE_GATE_TEST.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pokebot3DS-CFW-UltraSun-Bridge
+          path: artifact/
+          if-no-files-found: error
