@@ -77,7 +77,7 @@ jobs:
           sha256sum artifact/boot.firm > artifact/BOOT_FIRM_SHA256.txt
           git -C Luma3DS diff --stat > artifact/GENERATED_SOURCE_DIFF_STAT.txt
           printf 'Repository commit: %s\nWorkflow run: %s\nLuma source: d30ac8d1c665ed2a50dc30b291f7eb6b33e9890a\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > artifact/BUILD_PROVENANCE.txt
-          arm-none-eabi-gcc --version >> artifact/BUILD_PROVENANCE.txt
+          "$DEVKITARM/bin/arm-none-eabi-gcc" --version >> artifact/BUILD_PROVENANCE.txt
           python3 ultrasun_firmware/test_title_gate.py Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c > artifact/TITLE_GATE_TEST.txt
       - uses: actions/upload-artifact@v4
         with:
