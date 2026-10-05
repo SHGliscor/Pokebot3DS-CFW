@@ -1,11 +1,12 @@
 from pathlib import Path
 import sys
 
-if len(sys.argv) != 3:
-    raise SystemExit("usage: test_cpad_latch.py <controller.c> <bridge.c>")
+if len(sys.argv) != 4:
+    raise SystemExit("usage: test_cpad_latch.py <controller.c> <bridge.c> <controller.h>")
 
 controller = Path(sys.argv[1]).read_text(encoding="utf-8")
 bridge = Path(sys.argv[2]).read_text(encoding="utf-8")
+header = Path(sys.argv[3]).read_text(encoding="utf-8")
 
 required_controller = [
     "#define POKEBOT_CMD_CPAD_LATCH  14",
@@ -29,10 +30,10 @@ if "if (active() && sInput.kind != POKEBOT_KIND_CPAD_LATCH)" not in controller:
 if "req->command == 14" not in bridge:
     raise AssertionError("bridge does not route CPAD_LATCH command 14")
 
+if "startCpadLatch" in header:
+    raise AssertionError("CPAD latch implementation leaked into public header")
+
 if "svcWriteProcessMemory" in bridge:
     raise AssertionError("game-process RAM write path present")
 
 print("CPAD latch regression: PASS")
-
-if "startCpadLatch" in header:
-    raise AssertionError("CPAD latch implementation leaked into public header")
