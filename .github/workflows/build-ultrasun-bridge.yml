@@ -2,7 +2,7 @@ name: Build Ultra Sun Pokebot Bridge
 
 on:
   push:
-    branches: [build/ultrasun-bridge-20261004]
+    branches: [build/ultrasun-bridge-20261004, build/ultrasun-fluid-cpad-20261005]
     paths: ['ultrasun_firmware/**', '.github/workflows/build-ultrasun-bridge.yml']
   workflow_dispatch:
 
@@ -61,7 +61,8 @@ jobs:
           diff -u /tmp/menus-baseline.c Luma3DS/sysmodules/rosalina/source/menus.c > artifact/ULTRASUN_MENU_DIFF.patch || test "$?" = 1
           grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_RAM_PORT       4952' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
-          grep -q 'POKEBOT_INPUT_CAPS     0x000001CFUL' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          grep -q 'POKEBOT_INPUT_CAPS     0x000003CFUL' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
+          python3 ultrasun_firmware/test_cpad_latch.py Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q '0x20, CORE_SYSTEM' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'socPoll(&pfd, 1, 0)' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'svcSleepThread(2 \* 1000 \* 1000LL)' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
