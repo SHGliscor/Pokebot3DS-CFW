@@ -26,32 +26,6 @@ Result PokebotInputController_SetEnabled(bool enable);
 void PokebotInputController_Update(void);
 void PokebotInputController_ReleaseAll(void);
 
-static u16 startCpadLatch(u16 command, u32 sequence, u32 cpadState, u32 aux)
-{
-    if (!validCirclePad(cpadState) || cpadState == POKEBOT_CPAD_NEUTRAL || aux != 0)
-        return POKEBOT_STATUS_INPUT_INVALID;
-
-    /* Vector updates replace an existing CPAD latch immediately, with no
-       neutral gap. Other active input kinds remain mutually exclusive. */
-    if (active() && sInput.kind != POKEBOT_KIND_CPAD_LATCH)
-        return POKEBOT_STATUS_INPUT_BUSY;
-
-    memset(&sInput, 0, sizeof(sInput));
-    sInput.sequence = sequence;
-    sInput.command = command;
-    sInput.state = POKEBOT_INPUT_IN_PROGRESS;
-    sInput.rawHid = POKEBOT_HID_NEUTRAL;
-    sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
-    sInput.cpadState = cpadState;
-    sInput.kind = POKEBOT_KIND_CPAD_LATCH;
-    sInput.phase = POKEBOT_PHASE_LATCHED;
-    sInput.deadlineMs = 0;
-    PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
-    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
-    PokebotInput_SetRemoteCircle(cpadState);
-    pokebotInputCommands++;
-    return POKEBOT_STATUS_OK;
-}
 
 u16 PokebotInputController_Handle(
     u16 command,
@@ -453,6 +427,33 @@ static u16 startCpadPulse(u16 command, u32 sequence, u32 cpadState, u32 aux)
     sInput.kind = POKEBOT_KIND_CPAD_PULSE;
     sInput.phase = POKEBOT_PHASE_HELD;
     sInput.deadlineMs = osGetTime() + holdMs;
+    PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
+    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+    PokebotInput_SetRemoteCircle(cpadState);
+    pokebotInputCommands++;
+    return POKEBOT_STATUS_OK;
+}
+
+static u16 startCpadLatch(u16 command, u32 sequence, u32 cpadState, u32 aux)
+{
+    if (!validCirclePad(cpadState) || cpadState == POKEBOT_CPAD_NEUTRAL || aux != 0)
+        return POKEBOT_STATUS_INPUT_INVALID;
+
+    /* Vector updates replace an existing CPAD latch immediately, with no
+       neutral gap. Other active input kinds remain mutually exclusive. */
+    if (active() && sInput.kind != POKEBOT_KIND_CPAD_LATCH)
+        return POKEBOT_STATUS_INPUT_BUSY;
+
+    memset(&sInput, 0, sizeof(sInput));
+    sInput.sequence = sequence;
+    sInput.command = command;
+    sInput.state = POKEBOT_INPUT_IN_PROGRESS;
+    sInput.rawHid = POKEBOT_HID_NEUTRAL;
+    sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+    sInput.cpadState = cpadState;
+    sInput.kind = POKEBOT_KIND_CPAD_LATCH;
+    sInput.phase = POKEBOT_PHASE_LATCHED;
+    sInput.deadlineMs = 0;
     PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
     PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
     PokebotInput_SetRemoteCircle(cpadState);
