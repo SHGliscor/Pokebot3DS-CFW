@@ -33,3 +33,6 @@ if "svcWriteProcessMemory" in bridge:
     raise AssertionError("game-process RAM write path present")
 
 print("CPAD latch regression: PASS")
+
+if "startCpadLatch" in header:
+    raise AssertionError("CPAD latch implementation leaked into public header")
