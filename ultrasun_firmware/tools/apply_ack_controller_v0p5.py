@@ -28,32 +28,6 @@ void PokebotInputController_ReleaseAll(void);
 
 
 
-static u16 startFieldLatch(u16 command, u32 sequence, u32 cpadState, u32 rawHid)
-{
-    if (!validCirclePad(cpadState) || cpadState == POKEBOT_CPAD_NEUTRAL ||
-        !validRawHid(rawHid))
-        return POKEBOT_STATUS_INPUT_INVALID;
-
-    if (active() && sInput.kind != POKEBOT_KIND_FIELD_LATCH)
-        return POKEBOT_STATUS_INPUT_BUSY;
-
-    memset(&sInput, 0, sizeof(sInput));
-    sInput.sequence = sequence;
-    sInput.command = command;
-    sInput.state = POKEBOT_INPUT_IN_PROGRESS;
-    sInput.rawHid = rawHid;
-    sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
-    sInput.cpadState = cpadState;
-    sInput.kind = POKEBOT_KIND_FIELD_LATCH;
-    sInput.phase = POKEBOT_PHASE_LATCHED;
-    sInput.deadlineMs = 0;
-
-    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
-    PokebotInput_SetRemoteHid(rawHid);
-    PokebotInput_SetRemoteCircle(cpadState);
-    pokebotInputCommands++;
-    return POKEBOT_STATUS_OK;
-}
 
 u16 PokebotInputController_Handle(
     u16 command,
@@ -489,6 +463,33 @@ static u16 startCpadLatch(u16 command, u32 sequence, u32 cpadState, u32 aux)
     sInput.deadlineMs = 0;
     PokebotInput_SetRemoteHid(POKEBOT_HID_NEUTRAL);
     PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+    PokebotInput_SetRemoteCircle(cpadState);
+    pokebotInputCommands++;
+    return POKEBOT_STATUS_OK;
+}
+
+static u16 startFieldLatch(u16 command, u32 sequence, u32 cpadState, u32 rawHid)
+{
+    if (!validCirclePad(cpadState) || cpadState == POKEBOT_CPAD_NEUTRAL ||
+        !validRawHid(rawHid))
+        return POKEBOT_STATUS_INPUT_INVALID;
+
+    if (active() && sInput.kind != POKEBOT_KIND_FIELD_LATCH)
+        return POKEBOT_STATUS_INPUT_BUSY;
+
+    memset(&sInput, 0, sizeof(sInput));
+    sInput.sequence = sequence;
+    sInput.command = command;
+    sInput.state = POKEBOT_INPUT_IN_PROGRESS;
+    sInput.rawHid = rawHid;
+    sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+    sInput.cpadState = cpadState;
+    sInput.kind = POKEBOT_KIND_FIELD_LATCH;
+    sInput.phase = POKEBOT_PHASE_LATCHED;
+    sInput.deadlineMs = 0;
+
+    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+    PokebotInput_SetRemoteHid(rawHid);
     PokebotInput_SetRemoteCircle(cpadState);
     pokebotInputCommands++;
     return POKEBOT_STATUS_OK;
