@@ -56,6 +56,10 @@ jobs:
           grep -q 'POKEBOT_CMD_FRAMEBUFFER_READ = 12' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_INPUT_CAPS     0x000000CFUL' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
           grep -q 'POKEBOT_MAX_READ       0x200' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_X_TID  0x0004000000055D00ULL' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'POKEBOT_Y_TID  0x0004000000055E00ULL' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'return "kujira-1";' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
+          grep -q 'return "kujira-2";' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           ! grep -q 'svcWriteProcessMemory' Luma3DS/sysmodules/rosalina/source/pokebot_input_controller.c
 
@@ -77,8 +81,9 @@ jobs:
           cp luma_pokebot_bridge/tools/apply_n3ds_latency_fix_fb.py artifact/SOURCE_PATCHES/
           sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
           cat > artifact/FIRST_TEST.txt <<'EOF'
-          Pokebot-Luma v0p6-n3ds-fb1
+          Pokebot-Luma v0p6-n3ds-fb1 XY unified
           New 3DS latency fix + framebuffer commands 11-12.
+          GAME_INFO supports Pokemon X, Pokemon Y, Omega Ruby, and Alpha Sapphire.
           Commands 1-10 and RAM read-only authority are preserved.
           Standard Rosalina InputRedirection must remain OFF.
           Rosalina -> Pokebot3DS Bridge -> Enable Both.
