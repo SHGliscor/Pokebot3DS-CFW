@@ -11,7 +11,7 @@ header = Path(sys.argv[3]).read_text(encoding="utf-8")
 required_controller = [
     "#define POKEBOT_CMD_CPAD_LATCH  14",
     "#define POKEBOT_KIND_CPAD_LATCH  5",
-    "#define POKEBOT_INPUT_CAPS     0x000003CFUL",
+    "#define POKEBOT_INPUT_CAPS     0x000007CFUL",\n    "#define POKEBOT_CMD_FIELD_LATCH 15",\n    "#define POKEBOT_KIND_FIELD_LATCH 6",\n    "static u16 startFieldLatch(",\n    "else if (command == POKEBOT_CMD_FIELD_LATCH)",
     "sInput.kind == POKEBOT_KIND_CPAD_LATCH",
     "static u16 startCpadLatch(",
     "PokebotInput_SetRemoteCircle(cpadState);",
@@ -36,4 +36,4 @@ if "startCpadLatch" in header:
 if "svcWriteProcessMemory" in bridge:
     raise AssertionError("game-process RAM write path present")
 
-print("CPAD latch regression: PASS")
+print("CPAD/FIELD latch regression: PASS")
