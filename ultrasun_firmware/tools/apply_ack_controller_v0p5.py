@@ -27,6 +27,34 @@ void PokebotInputController_Update(void);
 void PokebotInputController_ReleaseAll(void);
 
 
+
+static u16 startFieldLatch(u16 command, u32 sequence, u32 cpadState, u32 rawHid)
+{
+    if (!validCirclePad(cpadState) || cpadState == POKEBOT_CPAD_NEUTRAL ||
+        !validRawHid(rawHid))
+        return POKEBOT_STATUS_INPUT_INVALID;
+
+    if (active() && sInput.kind != POKEBOT_KIND_FIELD_LATCH)
+        return POKEBOT_STATUS_INPUT_BUSY;
+
+    memset(&sInput, 0, sizeof(sInput));
+    sInput.sequence = sequence;
+    sInput.command = command;
+    sInput.state = POKEBOT_INPUT_IN_PROGRESS;
+    sInput.rawHid = rawHid;
+    sInput.touchState = POKEBOT_TOUCH_NEUTRAL;
+    sInput.cpadState = cpadState;
+    sInput.kind = POKEBOT_KIND_FIELD_LATCH;
+    sInput.phase = POKEBOT_PHASE_LATCHED;
+    sInput.deadlineMs = 0;
+
+    PokebotInput_SetRemoteTouch(POKEBOT_TOUCH_NEUTRAL);
+    PokebotInput_SetRemoteHid(rawHid);
+    PokebotInput_SetRemoteCircle(cpadState);
+    pokebotInputCommands++;
+    return POKEBOT_STATUS_OK;
+}
+
 u16 PokebotInputController_Handle(
     u16 command,
     u32 requestId,
@@ -50,6 +78,7 @@ source = r'''/*
  *  10 HID_LATCH
  *  13 CPAD_PULSE
  *  14 CPAD_LATCH (persistent / replaceable)
+ *  15 FIELD_LATCH (persistent raw HID + CPAD; replaceable)
  *
  * Pulse timing is owned by the 3DS. Duplicate sequence IDs are observational
  * and never create a second gameplay action. RELEASE_ALL neutralises only the
@@ -70,6 +99,7 @@ source = r'''/*
 #define POKEBOT_CMD_HID_LATCH   10
 #define POKEBOT_CMD_CPAD_PULSE  13
 #define POKEBOT_CMD_CPAD_LATCH  14
+#define POKEBOT_CMD_FIELD_LATCH 15
 
 #define POKEBOT_STATUS_OK                  0
 #define POKEBOT_STATUS_BAD_COMMAND         3
@@ -92,6 +122,7 @@ source = r'''/*
 #define POKEBOT_KIND_HID_LATCH   3
 #define POKEBOT_KIND_CPAD_PULSE  4
 #define POKEBOT_KIND_CPAD_LATCH  5
+#define POKEBOT_KIND_FIELD_LATCH 6
 
 #define POKEBOT_PHASE_NONE    0
 #define POKEBOT_PHASE_HELD    1
@@ -101,7 +132,7 @@ source = r'''/*
 #define POKEBOT_HID_NEUTRAL   0x00000FFFUL
 #define POKEBOT_TOUCH_NEUTRAL 0x02000000UL
 #define POKEBOT_CPAD_NEUTRAL  0x007FF7FFUL
-#define POKEBOT_INPUT_CAPS     0x000003CFUL
+#define POKEBOT_INPUT_CAPS     0x000007CFUL
 #define POKEBOT_MAX_HOLD_MS    5000UL
 #define POKEBOT_MAX_SETTLE_MS  5000UL
 
@@ -178,7 +209,8 @@ static void neutral(void)
 static u32 remainingMs(void)
 {
     if (!active() || sInput.kind == POKEBOT_KIND_HID_LATCH ||
-        sInput.kind == POKEBOT_KIND_CPAD_LATCH)
+        sInput.kind == POKEBOT_KIND_CPAD_LATCH ||
+        sInput.kind == POKEBOT_KIND_FIELD_LATCH)
         return 0;
     u64 now = osGetTime();
     if (now >= sInput.deadlineMs)
@@ -211,7 +243,8 @@ void PokebotInputController_Update(void)
     if (!pokebotInputControllerEnabled || !active())
         return;
     if (sInput.kind == POKEBOT_KIND_HID_LATCH ||
-        sInput.kind == POKEBOT_KIND_CPAD_LATCH)
+        sInput.kind == POKEBOT_KIND_CPAD_LATCH ||
+        sInput.kind == POKEBOT_KIND_FIELD_LATCH)
         return;
 
     u64 now = osGetTime();
@@ -557,6 +590,8 @@ u16 PokebotInputController_Handle(
         statusCode = startCpadPulse(command, requestId, argument, aux);
     else if (command == POKEBOT_CMD_CPAD_LATCH)
         statusCode = startCpadLatch(command, requestId, argument, aux);
+    else if (command == POKEBOT_CMD_FIELD_LATCH)
+        statusCode = startFieldLatch(command, requestId, argument, aux);
 
     if (statusCode != POKEBOT_STATUS_OK)
         return statusCode;
@@ -636,7 +671,7 @@ route_marker = '    PokebotTarget target;\n'
 if 'PokebotInputController_Handle(' not in text:
     if route_marker not in text:
         raise SystemExit("bridge route marker not found")
-    route = r'''    if ((req->command >= 5 && req->command <= 10) || req->command == 13 || req->command == 14)
+    route = r'''    if ((req->command >= 5 && req->command <= 10) || req->command == 13 || req->command == 14 || req->command == 15)
     {
         u8 inputPayload[32];
         u32 inputPayloadLength = 0;
