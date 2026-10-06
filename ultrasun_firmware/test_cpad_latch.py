@@ -33,6 +33,9 @@ if "req->command == 14" not in bridge:
 if "startCpadLatch" in header:
     raise AssertionError("CPAD latch implementation leaked into public header")
 
+if "startFieldLatch" in header:
+    raise AssertionError("FIELD latch implementation leaked into public header")
+
 if "svcWriteProcessMemory" in bridge:
     raise AssertionError("game-process RAM write path present")
 
