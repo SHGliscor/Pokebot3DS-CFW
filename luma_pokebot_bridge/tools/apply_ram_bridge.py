@@ -58,6 +58,8 @@ source = r'''/*
 #define POKEBOT_MAX_READ       0x200
 #define POKEBOT_MAP_ADDR       0x00100000UL
 
+#define POKEBOT_X_TID  0x0004000000055D00ULL
+#define POKEBOT_Y_TID  0x0004000000055E00ULL
 #define POKEBOT_OR_TID 0x000400000011C400ULL
 #define POKEBOT_AS_TID 0x000400000011C500ULL
 
@@ -144,11 +146,16 @@ static u8 CTR_ALIGN(8) sPokebotRamThreadStack[0x4000];
 
 static bool Pokebot_IsSupportedTitle(u64 tid)
 {
-    return tid == POKEBOT_OR_TID || tid == POKEBOT_AS_TID;
+    return tid == POKEBOT_X_TID || tid == POKEBOT_Y_TID ||
+           tid == POKEBOT_OR_TID || tid == POKEBOT_AS_TID;
 }
 
 static const char *Pokebot_ProcessName(u64 tid)
 {
+    if (tid == POKEBOT_X_TID)
+        return "kujira-1";
+    if (tid == POKEBOT_Y_TID)
+        return "kujira-2";
     if (tid == POKEBOT_OR_TID)
         return "sango-1";
     if (tid == POKEBOT_AS_TID)
