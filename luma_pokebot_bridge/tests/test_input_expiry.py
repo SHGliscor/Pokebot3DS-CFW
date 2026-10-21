@@ -22,6 +22,7 @@ class ExpiryTests(unittest.TestCase):
             original=mod.transform_controller(original)
         for name in ['3ds.h','input_redirection.h','pokebot_input_controller.h','MyThread.h']:
             (p/name).write_text('')
+        (p/'menu.h').write_text('#define CORE_SYSTEM 1\n')
         (p/'controller.c').write_text(original)
         (p/'harness.c').write_text(r'''
 #include <stdint.h>
@@ -31,7 +32,6 @@ typedef uint32_t u32; typedef uint16_t u16; typedef uint8_t u8;
 typedef uint64_t u64; typedef int32_t s32; typedef int64_t s64;
 typedef int Result; typedef int LightLock; typedef struct {int handle;} MyThread;
 #define CTR_ALIGN(n) __attribute__((aligned(n)))
-#define CORE_SYSTEM 0
 #define R_FAILED(r) ((r)<0)
 static u64 clock_ms; static u32 clock_step; static u32 remote_hid=4095, remote_touch=0x02000000;
 static int thread_error, sleeps; static void (*timer_entry)(void);

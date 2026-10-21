@@ -14,7 +14,7 @@ def one(s, old, new):
     return s.replace(old, new, 1)
 
 def transform_controller(s):
-    s=one(s,'#include <string.h>','#include <string.h>\n#include "MyThread.h"\nextern bool preTerminationRequested;')
+    s=one(s,'#include <string.h>','#include <string.h>\n#include "MyThread.h"\n#include "menu.h"\nextern bool preTerminationRequested;')
     s=one(s,'#define POKEBOT_CMD_HID_LATCH   10', '''#define POKEBOT_CMD_HID_LATCH   10
 #define POKEBOT_CMD_HID_LEASE   16
 #define POKEBOT_CMD_HID_RENEW   17
