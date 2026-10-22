@@ -1,9 +1,9 @@
-name: Build HOME v39 input expiry (EXPERIMENTAL)
+name: Build AS combined world snapshot (TEST)
 
 on:
   workflow_dispatch:
   push:
-    branches: [fix/leased-input-home39-20261021]
+    branches: [fix/as-world-snapshot-20261022]
 
 jobs:
   build:
@@ -40,6 +40,7 @@ jobs:
           python3 luma_pokebot_bridge/tools/apply_n3ds_latency_fix_fb.py
           python3 luma_pokebot_bridge/tools/apply_crystal_home_v39.py
           python3 luma_pokebot_bridge/tools/apply_input_expiry.py
+          python3 luma_pokebot_bridge/tools/apply_world_snapshot.py
           python3 -m unittest discover -s luma_pokebot_bridge/tests -v
           grep -q 'POKEBOT_CMD_FRAMEBUFFER_INFO = 11' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
           grep -q 'POKEBOT_CMD_FRAMEBUFFER_READ = 12' Luma3DS/sysmodules/rosalina/source/pokebot_ram_bridge.c
@@ -60,13 +61,12 @@ jobs:
           mkdir -p artifact/SD_ROOT artifact/SOURCE_PATCHES
           cp Luma3DS/boot.firm artifact/SD_ROOT/boot.firm
           cp luma_pokebot_bridge/tools/apply_*.py artifact/SOURCE_PATCHES/
-          cp -r luma_pokebot_bridge/expiry_probe artifact/PC_TEST
           cp Luma3DS/sysmodules/rosalina/rosalina.elf artifact/rosalina.elf
           sha256sum artifact/SD_ROOT/boot.firm > artifact/BOOT_FIRM_SHA256.txt
-          printf '%s\n' 'UNTESTED HOME v39 + optional expiring HID 16/17. Existing clients still use legacy indefinite latch 10.' 'Back up existing SD:/boot.firm first. Keep current code.ips and mGBA files.' 'Run PC_TEST/run_expiry_probe.bat in Alpha Sapphire overworld; no D-pad movement.' > artifact/READ_ME_FIRST.txt
+          printf '%s\n' 'UNTESTED HOME v39 + optional expiring HID 16/17. Existing clients still use legacy indefinite latch 10.' 'Back up existing SD:/boot.firm first. Keep current code.ips and mGBA files.' 'Read-only AS snapshot18 added; use the matching bounded snapshot walking bundle.' > artifact/READ_ME_FIRST.txt
       - name: Upload test candidate (not production)
         uses: actions/upload-artifact@v4
         with:
-          name: HOME-v39-InputExpiry-TEST
+          name: AS-WorldSnapshot-snap1-TEST
           path: artifact/
           if-no-files-found: error
